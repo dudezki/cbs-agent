@@ -413,322 +413,338 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="h-screen bg-gray-900 text-gray-100 font-sans">
-    <Login v-if="!user" @login-success="handleLogin" />
-    <div v-else class="flex h-full">
-        <!-- Left Sidebar: Sessions -->
-        <div class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col">
-          <div class="p-4 flex justify-between items-center">
-            <h1 class="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">Callbox</h1>
-            <div v-if="isConnected" class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(74,222,128,0.6)]" title="Connected"></div>
-            <div v-else class="w-2 h-2 rounded-full bg-red-500" title="Disconnected"></div>
-          </div>
-          
-          <div class="px-4 pb-2">
-            <button 
-              @click="createSession"
-              class="w-full py-3 px-4 bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-gray-600 rounded-full transition-all flex items-center gap-3 font-medium text-gray-300 hover:text-white group shadow-sm"
-            >
-              <!-- ... existing New Chat button ... -->
-              <div class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                </svg>
+  <div class="h-screen bg-gray-900 text-gray-100 font-sans overflow-hidden">
+    <Transition name="page-fade" mode="out-in">
+        <Login v-if="!user" @login-success="handleLogin" />
+        <div v-else class="flex h-full w-full">
+            <!-- Left Sidebar: Sessions -->
+            <div class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col flex-shrink-0">
+              <div class="p-4 flex justify-between items-center">
+                <h1 class="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">Callbox</h1>
+                <div v-if="isConnected" class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(74,222,128,0.6)]" title="Connected"></div>
+                <div v-else class="w-2 h-2 rounded-full bg-red-500" title="Disconnected"></div>
               </div>
-              <span>New Chat</span>
-            </button>
-          </div>
-
-          <div class="flex-1 overflow-y-auto px-2">
-             <!-- ... existing sessions list ... -->
-            <div v-if="sessions.length === 0" class="text-gray-500 text-center py-4 text-sm">
-              No sessions yet
-            </div>
-            <ul v-else class="space-y-1">
-              <li v-for="session in sessions" :key="session.id">
-                <button
-                  @click="selectSession(session.id)"
-                  :session-id="session.id"
-                  class="w-full text-left py-3 px-4 rounded-md text-sm transition-colors group flex items-center justify-between gap-2"
-                  :class="currentSessionId === session.id ? 'bg-gray-700 shadow-sm' : 'hover:bg-gray-700/50'"
-                >
-                  <div class="flex flex-col gap-0.5 min-w-0 flex-1">
-                     <span class="font-medium truncate" :class="currentSessionId === session.id ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'">{{ session.state?.title || session.id }}</span>
-                     <span class="text-xs" :class="currentSessionId === session.id ? 'text-gray-400' : 'text-gray-500 group-hover:text-gray-400'">
-                       {{ formatSessionTime(session.last_update_time) }}
-                     </span>
-                  </div>
-                  <div 
-                    @click.stop="deleteSession(session.id)"
-                    class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/20 hover:text-red-400 rounded transition-all text-gray-500"
-                    title="Delete Session"
-                  >
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                    </svg>
-                  </div>
-                </button>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Right Main: Chat -->
-        <div class="flex-1 flex flex-col bg-gray-900 relative">
-          <!-- Transparent Header with User Menu -->
-          <header class="h-16 flex items-center justify-between px-6 sticky top-0 z-20 pointer-events-none">
-            <!-- Title (Left) - Only show if session active -->
-            <div class="pointer-events-auto">
-                <h2 v-if="currentSessionId" class="text-lg font-medium text-gray-200 opacity-0 lg:opacity-100 transition-opacity">
-                   <!-- Hidden on mobile/small screens or just kept simple -->
-                </h2>
-            </div>
-            
-            <!-- User Menu (Right) -->
-            <div class="relative pointer-events-auto user-menu-container">
-                <button @click="toggleUserMenu" class="flex items-center gap-2 focus:outline-none p-1 rounded-full hover:bg-gray-800 transition-colors">
-                     <img :src="user.picture" class="w-8 h-8 rounded-full ring-2 ring-gray-700" v-if="user.picture" referrerpolicy="no-referrer" />
-                     <div class="w-8 h-8 rounded-full bg-blue-500 ring-2 ring-gray-700 flex items-center justify-center text-white font-bold" v-else>
-                         {{ user.name ? user.name[0] : 'U' }}
-                     </div>
-                </button>
-                
-                <!-- Dropdown -->
-                <div v-if="isUserMenuOpen" class="absolute right-0 top-full mt-2 w-72 bg-gray-800 rounded-2xl shadow-xl border border-gray-700 overflow-hidden z-50 transform origin-top-right transition-all">
-                    <div class="p-4 border-b border-gray-700/50 flex flex-col items-center">
-                         <img :src="user.picture" class="w-16 h-16 rounded-full mb-3 ring-4 ring-gray-700" v-if="user.picture" referrerpolicy="no-referrer" />
-                         <div class="w-16 h-16 rounded-full bg-blue-500 mb-3 ring-4 ring-gray-700 flex items-center justify-center text-white font-bold text-2xl" v-else>
-                             {{ user.name ? user.name[0] : 'U' }}
-                         </div>
-                         <div class="text-white font-medium text-lg">{{ user.name }}</div>
-                         <div class="text-gray-400 text-sm">{{ user.email }}</div>
-                    </div>
-                    <div class="p-2">
-                        <a href="https://myaccount.google.com/" target="_blank" class="block w-full text-center py-2 px-4 rounded-full border border-gray-600 text-gray-300 hover:bg-gray-700 text-sm font-medium transition-colors mb-2">
-                            Manage your Google Account
-                        </a>
-                        <button @click="handleLogout" class="w-full text-left py-2 px-4 rounded-xl text-gray-300 hover:bg-gray-700 flex items-center gap-3 transition-colors text-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            Sign out
-                        </button>
-                    </div>
-                    <div class="bg-gray-900/50 py-2 px-4 text-center text-xs text-gray-500">
-                        <a href="#" class="hover:text-gray-300">Privacy Policy</a> • <a href="#" class="hover:text-gray-300">Terms of Service</a>
-                    </div>
-                </div>
-            </div>
-          </header>
-
-          <!-- Messages Area -->
-          <div 
-            ref="chatContainer"
-            class="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth"
-            @click="handleChatClick"
-          >
-            <div v-if="!currentSessionId" class="h-full flex flex-col items-center justify-center text-center p-8 relative overflow-hidden">
-              <!-- Background Decoration -->
-              <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-blue-500/10 to-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-              <div class="relative z-10 max-w-2xl">
-                <h1 class="text-6xl font-semibold mb-6">
-                  <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-red-400">Hello, {{ user ? user.name.split(' ')[0] : 'Human' }}</span>
-                </h1>
-                <p class="text-2xl text-gray-400 mb-12 font-light">How can I help you today?</p>
-                
+              
+              <div class="px-4 pb-2">
                 <button 
-                   @click="createSession"
-                   class="px-8 py-4 bg-gray-100/10 hover:bg-gray-100/20 border border-white/10 rounded-2xl text-lg backdrop-blur-md transition-all hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20 flex items-center gap-3 mx-auto"
+                  @click="createSession"
+                  class="w-full py-3 px-4 bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-gray-600 rounded-full transition-all flex items-center gap-3 font-medium text-gray-300 hover:text-white group shadow-sm"
                 >
-                  <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                  <div class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                       <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                     </svg>
                   </div>
-                  <span>Start a new conversation</span>
+                  <span>New Chat</span>
                 </button>
               </div>
-            </div>
 
-            <div v-else-if="isHistoryLoading" class="h-full flex items-center justify-center">
-               <div class="flex flex-col items-center gap-3">
-                 <div class="w-8 h-8 border-2 border-t-transparent border-blue-500 rounded-full animate-spin"></div>
-                 <span class="text-gray-500 text-sm">Loading history...</span>
-               </div>
-            </div>
-
-            <template v-else>
-              <!-- Welcome Message (Empty State) -->
-              <div v-if="chatHistory.length === 0 && !isThinking" class="h-full flex flex-col items-center justify-center -mt-20">
-                 <div class="mb-10 text-center">
-                    <h1 class="text-5xl font-medium mb-3">
-                       <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">Callbox Assistant</span>
-                    </h1>
-                    <p class="text-xl text-gray-400 font-light">I'm ready whenever you are.</p>
-                 </div>
-                 
-                 <div class="grid grid-cols-2 gap-4 w-full max-w-2xl px-4">
-                    <button @click="userInput = 'Analyze the sales performance in Q4'; sendMessage()" class="text-left p-4 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all hover:-translate-y-1 group">
-                       <h3 class="text-blue-300 font-medium mb-1 group-hover:text-blue-200">Analyze Sales</h3>
-                       <p class="text-sm text-gray-500 line-clamp-2">Review performance metrics for the last quarter</p>
-                    </button>
-                    <button @click="userInput = 'Draft a marketing report regarding our latest campaign'; sendMessage()" class="text-left p-4 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all hover:-translate-y-1 group">
-                       <h3 class="text-purple-300 font-medium mb-1 group-hover:text-purple-200">Draft Report</h3>
-                       <p class="text-sm text-gray-500 line-clamp-2">Create a comprehensive marketing summary</p>
-                    </button>
-                     <button @click="userInput = 'Check the CRM data for inconsistencies'; sendMessage()" class="text-left p-4 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all hover:-translate-y-1 group">
-                       <h3 class="text-pink-300 font-medium mb-1 group-hover:text-pink-200">Audit Data</h3>
-                       <p class="text-sm text-gray-500 line-clamp-2">Scan datasets for potential errors or gaps</p>
-                    </button>
-                     <button @click="userInput = 'Help me plan the strategy for next month'; sendMessage()" class="text-left p-4 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all hover:-translate-y-1 group">
-                       <h3 class="text-yellow-300 font-medium mb-1 group-hover:text-yellow-200">Plan Strategy</h3>
-                       <p class="text-sm text-gray-500 line-clamp-2">Outline key objectives and action items</p>
-                    </button>
-                 </div>
-              </div>
-
-              <div v-for="(msg, index) in chatHistory" :key="index" class="flex flex-col gap-1 max-w-5xl mx-auto">
-                 
-                <!-- User Message -->
-                <div v-if="msg.role === 'user'" class="self-end max-w-[80%]">
-                  <div class="bg-blue-600 text-white px-5 py-3 rounded-2xl rounded-br-none shadow-lg">
-                    {{ msg.text }}
-                  </div>
-                  <div class="text-xs text-gray-500 mt-1 text-right">{{ msg.timestamp }}</div>
+              <div class="flex-1 overflow-y-auto px-2 custom-scrollbar">
+                <div v-if="sessions.length === 0" class="text-gray-500 text-center py-4 text-sm">
+                  No sessions yet
                 </div>
-                
-                <!-- Model Message -->
-                <div v-else-if="msg.role === 'model'" class="self-start max-w-[80%]">
-                   <div class="flex items-start gap-3">
-                     <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-blue-500 flex-shrink-0 flex items-center justify-center text-white font-bold text-xs select-none shadow-md">
-                       {{ msg.author ? msg.author.slice(0, 2).toUpperCase() : 'AI' }}
-                     </div>
-                     <div>
-                        <div class="bg-gray-800 border border-gray-700 text-gray-100 px-5 py-3 rounded-2xl rounded-tl-none shadow-sm prose prose-invert prose-sm max-w-none break-words prose-headings:text-gray-100 prose-a:text-blue-400 prose-strong:text-white prose-code:text-pink-300 prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-700 prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-table:border-collapse prose-tr:border-b prose-tr:border-gray-700/50">
-                           <div v-html="renderMarkdown(msg.text)"></div>
-                        </div>
-                        <div class="text-xs text-gray-500 mt-1 flex items-center gap-2">
-                          <span v-if="msg.author" class="font-semibold text-blue-300/80">{{ msg.author }}</span>
-                          <span>{{ msg.timestamp }}</span>
-                        </div>
-                     </div>
-                   </div>
-                </div>
-
-                 <!-- Error Message -->
-                <div v-else-if="msg.role === 'error'" class="self-center bg-red-900/50 text-red-200 px-4 py-2 rounded-lg border border-red-800 text-sm">
-                    {{ msg.text }}
-                </div>
-
-              </div>
-
-              <!-- Thinking Container (Live Stream) -->
-              <div v-if="isThinking || agentThinking.length > 0" class="max-w-5xl mx-auto w-full mt-4 mb-8 transition-all duration-500 ease-in-out">
-                
-                <!-- Simple Mode: For Casual/Manager interactions -->
-                <div v-if="!isComplexWorkflow" class="flex items-center gap-3 px-4 py-2 bg-gray-800/30 rounded-full w-fit mx-auto border border-gray-700/30 backdrop-blur-sm animate-pulse">
-                   <div class="relative flex h-4 w-4">
-                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                      <span class="relative inline-flex rounded-full h-4 w-4 bg-blue-500"></span>
-                   </div>
-                   <span class="text-sm text-gray-400 font-medium">Callbox is thinking...</span>
-                </div>
-
-                <!-- Complex Mode: For Report Workflow -->
-                <details v-else class="group bg-gray-800/50 border border-gray-700/50 rounded-lg overflow-hidden transition-all duration-300 open:bg-gray-800/80" open>
-                  <summary class="flex items-center gap-3 px-4 py-3 cursor-pointer select-none text-sm text-gray-400 hover:text-gray-200 transition-colors list-none">
-                     <div v-if="isThinking" class="relative flex h-3 w-3">
-                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-                      <span class="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
-                    </div>
-                    <div v-else class="w-3 h-3 rounded-full bg-gray-500"></div>
-                    
-                    <span class="font-medium bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400 animate-pulse">
-                      {{ isThinking ? 'Workflow Active: Generating Report...' : 'Workflow Complete' }}
-                    </span>
-                    <span class="ml-auto text-xs bg-gray-700 px-2 py-0.5 rounded-full text-gray-400 group-open:text-gray-300">
-                      {{ agentThinking.length }} steps
-                    </span>
-                    <svg class="w-4 h-4 transition-transform group-open:rotate-180 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </summary>
-                  <div class="p-4 border-t border-gray-700/50 bg-gray-900/50 font-mono text-xs text-gray-400 overflow-x-auto max-h-80 custom-scrollbar">
-                    <div v-for="(event, idx) in agentThinking" :key="idx" class="mb-2 last:mb-0 hover:bg-gray-800/50 p-2 rounded transition-colors border-l-2" 
-                         :class="['content_creator', 'auditor', 'critic', 'refiner'].includes(event.author || '') ? 'border-purple-500/50 bg-purple-900/10' : 'border-gray-700'">
-                       <div class="flex gap-2 mb-1 justify-between">
-                          <div class="flex gap-2">
-                            <span class="font-bold uppercase tracking-wider text-[10px]" 
-                                  :class="{'text-purple-400': ['content_creator', 'refiner'].includes(event.author || ''), 
-                                           'text-red-400': event.author === 'critic',
-                                           'text-yellow-400': event.author === 'auditor',
-                                           'text-blue-400': !['content_creator', 'auditor', 'critic', 'refiner'].includes(event.author || '')}">
-                              {{ event.author }}
-                            </span>
-                            <span class="text-gray-600">{{ event.timestamp ? new Date(event.timestamp * 1000).toLocaleTimeString().split(' ')[0] : '' }}</span>
-                          </div>
-                       </div>
-                       <div v-if="event.actions" class="pl-2">
-                          <div v-if="event.actions.thought" class="text-gray-300 mb-1 italic">
-                             "{{ event.actions.thought }}"
-                          </div>
-                           <div v-if="event.actions.tool_use" class="text-emerald-400/80 font-medium">
-                             Tool: <span class="text-emerald-300">{{ event.actions.tool_use }}</span>
-                          </div>
-                       </div>
-                    </div>
-                  </div>
-                </details>
-              </div>
-            </template>
-          </div>
-
-          <!-- Input Area -->
-          <div v-if="currentSessionId" class="p-6 bg-transparent pb-8">
-            <div class="max-w-4xl mx-auto relative group">
-               <div class="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl blur opacity-0 group-focus-within:opacity-100 transition duration-1000"></div>
-               
-               <div class="relative bg-gray-800 rounded-3xl border border-gray-700 shadow-xl overflow-hidden focus-within:border-gray-600 transition-colors">
-                  <textarea
-                    v-model="userInput"
-                    @keydown.enter.exact.prevent="sendMessage"
-                    class="w-full bg-transparent text-gray-100 placeholder-gray-500 px-6 py-4 pr-16 focus:outline-none transition-all resize-none text-base max-h-64 custom-scrollbar"
-                    rows="1"
-                    placeholder="Message Callbox..."
-                    :disabled="isThinking"
-                    @input="(e: Event) => { 
-                      const target = e.target as HTMLTextAreaElement;
-                      target.style.height = 'auto'; 
-                      target.style.height = target.scrollHeight + 'px' 
-                    }"
-                  ></textarea>
-                  
-                   <div class="absolute right-2 bottom-2 flex items-center">
-                    <button 
-                      @click="sendMessage"
-                      :disabled="!userInput.trim() || isThinking"
-                      class="p-2.5 rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 active:scale-95 flex items-center justify-center"
-                      :class="userInput.trim() ? 'bg-blue-600 hover:bg-blue-500' : 'bg-transparent text-gray-500 hover:bg-gray-700'"
+                <ul v-else class="space-y-1">
+                  <li v-for="session in sessions" :key="session.id">
+                    <button
+                      @click="selectSession(session.id)"
+                      :session-id="session.id"
+                      class="w-full text-left py-3 px-4 rounded-md text-sm transition-colors group flex items-center justify-between gap-2"
+                      :class="currentSessionId === session.id ? 'bg-gray-700 shadow-sm' : 'hover:bg-gray-700/50'"
                     >
-                      <svg v-if="!isThinking" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                         <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                      </svg>
-                      <div v-else class="h-5 w-5 border-2 border-t-transparent border-gray-400 rounded-full animate-spin"></div>
+                      <div class="flex flex-col gap-0.5 min-w-0 flex-1">
+                         <span class="font-medium truncate" :class="currentSessionId === session.id ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'">{{ session.state?.title || session.id }}</span>
+                         <span class="text-xs" :class="currentSessionId === session.id ? 'text-gray-400' : 'text-gray-500 group-hover:text-gray-400'">
+                           {{ formatSessionTime(session.last_update_time) }}
+                         </span>
+                      </div>
+                      <div 
+                        @click.stop="deleteSession(session.id)"
+                        class="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/20 hover:text-red-400 rounded transition-all text-gray-500"
+                        title="Delete Session"
+                      >
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                      </div>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Right Main: Chat -->
+            <div class="flex-1 flex flex-col bg-gray-900 relative min-w-0">
+              <!-- Transparent Header with User Menu -->
+              <header class="h-16 flex items-center justify-between px-6 sticky top-0 z-20 pointer-events-none">
+                <!-- Title (Left) - Only show if session active -->
+                <div class="pointer-events-auto">
+                    <h2 v-if="currentSessionId" class="text-lg font-medium text-gray-200 opacity-0 lg:opacity-100 transition-opacity">
+                       <!-- Hidden on mobile/small screens or just kept simple -->
+                    </h2>
+                </div>
+                
+                <!-- User Menu (Right) -->
+                <div class="relative pointer-events-auto user-menu-container">
+                    <button @click="toggleUserMenu" class="flex items-center gap-2 focus:outline-none p-1 rounded-full hover:bg-gray-800 transition-colors">
+                         <img :src="user.picture" class="w-8 h-8 rounded-full ring-2 ring-gray-700" v-if="user.picture" referrerpolicy="no-referrer" />
+                         <div class="w-8 h-8 rounded-full bg-blue-500 ring-2 ring-gray-700 flex items-center justify-center text-white font-bold" v-else>
+                             {{ user.name ? user.name[0] : 'U' }}
+                         </div>
+                    </button>
+                    
+                    <!-- Dropdown -->
+                    <div v-if="isUserMenuOpen" class="absolute right-0 top-full mt-2 w-72 bg-gray-800 rounded-2xl shadow-xl border border-gray-700 overflow-hidden z-50 transform origin-top-right transition-all">
+                        <div class="p-4 border-b border-gray-700/50 flex flex-col items-center">
+                             <img :src="user.picture" class="w-16 h-16 rounded-full mb-3 ring-4 ring-gray-700" v-if="user.picture" referrerpolicy="no-referrer" />
+                             <div class="w-16 h-16 rounded-full bg-blue-500 mb-3 ring-4 ring-gray-700 flex items-center justify-center text-white font-bold text-2xl" v-else>
+                                 {{ user.name ? user.name[0] : 'U' }}
+                             </div>
+                             <div class="text-white font-medium text-lg">{{ user.name }}</div>
+                             <div class="text-gray-400 text-sm">{{ user.email }}</div>
+                        </div>
+                        <div class="p-2">
+                            <a href="https://myaccount.google.com/" target="_blank" class="block w-full text-center py-2 px-4 rounded-full border border-gray-600 text-gray-300 hover:bg-gray-700 text-sm font-medium transition-colors mb-2">
+                                Manage your Google Account
+                            </a>
+                            <button @click="handleLogout" class="w-full text-left py-2 px-4 rounded-xl text-gray-300 hover:bg-gray-700 flex items-center gap-3 transition-colors text-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                Sign out
+                            </button>
+                        </div>
+                        <div class="bg-gray-900/50 py-2 px-4 text-center text-xs text-gray-500">
+                            <a href="#" class="hover:text-gray-300">Privacy Policy</a> • <a href="#" class="hover:text-gray-300">Terms of Service</a>
+                        </div>
+                    </div>
+                </div>
+              </header>
+
+              <!-- Messages Area -->
+              <div 
+                ref="chatContainer"
+                class="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth custom-scrollbar"
+                @click="handleChatClick"
+              >
+                <div v-if="!currentSessionId" class="h-full flex flex-col items-center justify-center text-center p-8 relative overflow-hidden">
+                  <!-- Background Decoration -->
+                  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-blue-500/10 to-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                  <div class="relative z-10 max-w-2xl">
+                    <h1 class="text-6xl font-semibold mb-6">
+                      <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-red-400">Hello, {{ user ? user.name.split(' ')[0] : 'Human' }}</span>
+                    </h1>
+                    <p class="text-2xl text-gray-400 mb-12 font-light">How can I help you today?</p>
+                    
+                    <button 
+                       @click="createSession"
+                       class="px-8 py-4 bg-gray-100/10 hover:bg-gray-100/20 border border-white/10 rounded-2xl text-lg backdrop-blur-md transition-all hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20 flex items-center gap-3 mx-auto"
+                    >
+                      <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                      </div>
+                      <span>Start a new conversation</span>
                     </button>
                   </div>
-               </div>
+                </div>
+
+                <div v-else-if="isHistoryLoading" class="h-full flex items-center justify-center">
+                   <div class="flex flex-col items-center gap-3">
+                     <div class="w-8 h-8 border-2 border-t-transparent border-blue-500 rounded-full animate-spin"></div>
+                     <span class="text-gray-500 text-sm">Loading history...</span>
+                   </div>
+                </div>
+
+                <template v-else>
+                  <!-- Welcome Message (Empty State) -->
+                  <div v-if="chatHistory.length === 0 && !isThinking" class="h-full flex flex-col items-center justify-center -mt-20">
+                     <div class="mb-10 text-center">
+                        <h1 class="text-5xl font-medium mb-3">
+                           <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">Callbox Assistant</span>
+                        </h1>
+                        <p class="text-xl text-gray-400 font-light">I'm ready whenever you are.</p>
+                     </div>
+                     
+                     <div class="grid grid-cols-2 gap-4 w-full max-w-2xl px-4">
+                        <button @click="userInput = 'Analyze the sales performance in Q4'; sendMessage()" class="text-left p-4 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all hover:-translate-y-1 group">
+                           <h3 class="text-blue-300 font-medium mb-1 group-hover:text-blue-200">Analyze Sales</h3>
+                           <p class="text-sm text-gray-500 line-clamp-2">Review performance metrics for the last quarter</p>
+                        </button>
+                        <button @click="userInput = 'Draft a marketing report regarding our latest campaign'; sendMessage()" class="text-left p-4 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all hover:-translate-y-1 group">
+                           <h3 class="text-purple-300 font-medium mb-1 group-hover:text-purple-200">Draft Report</h3>
+                           <p class="text-sm text-gray-500 line-clamp-2">Create a comprehensive marketing summary</p>
+                        </button>
+                         <button @click="userInput = 'Check the CRM data for inconsistencies'; sendMessage()" class="text-left p-4 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all hover:-translate-y-1 group">
+                           <h3 class="text-pink-300 font-medium mb-1 group-hover:text-pink-200">Audit Data</h3>
+                           <p class="text-sm text-gray-500 line-clamp-2">Scan datasets for potential errors or gaps</p>
+                        </button>
+                         <button @click="userInput = 'Help me plan the strategy for next month'; sendMessage()" class="text-left p-4 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all hover:-translate-y-1 group">
+                           <h3 class="text-yellow-300 font-medium mb-1 group-hover:text-yellow-200">Plan Strategy</h3>
+                           <p class="text-sm text-gray-500 line-clamp-2">Outline key objectives and action items</p>
+                        </button>
+                     </div>
+                  </div>
+
+                  <div v-for="(msg, index) in chatHistory" :key="index" class="flex flex-col gap-1 max-w-5xl mx-auto">
+                     
+                    <!-- User Message -->
+                    <div v-if="msg.role === 'user'" class="self-end max-w-[80%]">
+                      <div class="bg-blue-600 text-white px-5 py-3 rounded-2xl rounded-br-none shadow-lg">
+                        {{ msg.text }}
+                      </div>
+                      <div class="text-xs text-gray-500 mt-1 text-right">{{ msg.timestamp }}</div>
+                    </div>
+                    
+                    <!-- Model Message -->
+                    <div v-else-if="msg.role === 'model'" class="self-start max-w-[80%]">
+                       <div class="flex items-start gap-3">
+                         <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-blue-500 flex-shrink-0 flex items-center justify-center text-white font-bold text-xs select-none shadow-md">
+                           {{ msg.author ? msg.author.slice(0, 2).toUpperCase() : 'AI' }}
+                         </div>
+                         <div>
+                            <div class="bg-gray-800 border border-gray-700 text-gray-100 px-5 py-3 rounded-2xl rounded-tl-none shadow-sm prose prose-invert prose-sm max-w-none break-words prose-headings:text-gray-100 prose-a:text-blue-400 prose-strong:text-white prose-code:text-pink-300 prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-700 prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-table:border-collapse prose-tr:border-b prose-tr:border-gray-700/50">
+                               <div v-html="renderMarkdown(msg.text)"></div>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                              <span v-if="msg.author" class="font-semibold text-blue-300/80">{{ msg.author }}</span>
+                              <span>{{ msg.timestamp }}</span>
+                            </div>
+                         </div>
+                       </div>
+                    </div>
+
+                     <!-- Error Message -->
+                    <div v-else-if="msg.role === 'error'" class="self-center bg-red-900/50 text-red-200 px-4 py-2 rounded-lg border border-red-800 text-sm">
+                        {{ msg.text }}
+                    </div>
+
+                  </div>
+
+                  <!-- Thinking Container (Live Stream) -->
+                  <div v-if="isThinking || agentThinking.length > 0" class="max-w-5xl mx-auto w-full mt-4 mb-8 transition-all duration-500 ease-in-out">
+                    <!-- ... existing thinking UI ... -->
+                    <div v-if="!isComplexWorkflow" class="flex items-center gap-3 px-4 py-2 bg-gray-800/30 rounded-full w-fit mx-auto border border-gray-700/30 backdrop-blur-sm animate-pulse">
+                        <div class="relative flex h-4 w-4">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-4 w-4 bg-blue-500"></span>
+                        </div>
+                        <span class="text-sm text-gray-400 font-medium">Callbox is thinking...</span>
+                    </div>
+
+                     <details v-else class="group bg-gray-800/50 border border-gray-700/50 rounded-lg overflow-hidden transition-all duration-300 open:bg-gray-800/80" open>
+                        <summary class="flex items-center gap-3 px-4 py-3 cursor-pointer select-none text-sm text-gray-400 hover:text-gray-200 transition-colors list-none">
+                            <div v-if="isThinking" class="relative flex h-3 w-3">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
+                            </div>
+                            <div v-else class="w-3 h-3 rounded-full bg-gray-500"></div>
+                            
+                            <span class="font-medium bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400 animate-pulse">
+                                {{ isThinking ? 'Workflow Active: Generating Report...' : 'Workflow Complete' }}
+                            </span>
+                            <span class="ml-auto text-xs bg-gray-700 px-2 py-0.5 rounded-full text-gray-400 group-open:text-gray-300">
+                                {{ agentThinking.length }} steps
+                            </span>
+                             <svg class="w-4 h-4 transition-transform group-open:rotate-180 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </summary>
+                         <div class="p-4 border-t border-gray-700/50 bg-gray-900/50 font-mono text-xs text-gray-400 overflow-x-auto max-h-80 custom-scrollbar">
+                            <div v-for="(event, idx) in agentThinking" :key="idx" class="mb-2 last:mb-0 hover:bg-gray-800/50 p-2 rounded transition-colors border-l-2" 
+                                :class="['content_creator', 'auditor', 'critic', 'refiner'].includes(event.author || '') ? 'border-purple-500/50 bg-purple-900/10' : 'border-gray-700'">
+                            <div class="flex gap-2 mb-1 justify-between">
+                                <div class="flex gap-2">
+                                    <span class="font-bold uppercase tracking-wider text-[10px]" 
+                                        :class="{'text-purple-400': ['content_creator', 'refiner'].includes(event.author || ''), 
+                                                'text-red-400': event.author === 'critic',
+                                                'text-yellow-400': event.author === 'auditor',
+                                                'text-blue-400': !['content_creator', 'auditor', 'critic', 'refiner'].includes(event.author || '')}">
+                                    {{ event.author }}
+                                    </span>
+                                    <span class="text-gray-600">{{ event.timestamp ? new Date(event.timestamp * 1000).toLocaleTimeString().split(' ')[0] : '' }}</span>
+                                </div>
+                            </div>
+                            <div v-if="event.actions" class="pl-2">
+                                <div v-if="event.actions.thought" class="text-gray-300 mb-1 italic">
+                                    "{{ event.actions.thought }}"
+                                </div>
+                                <div v-if="event.actions.tool_use" class="text-emerald-400/80 font-medium">
+                                    Tool: <span class="text-emerald-300">{{ event.actions.tool_use }}</span>
+                                </div>
+                            </div>
+                            </div>
+                         </div>
+                     </details>
+                  </div>
+                </template>
+              </div>
+
+              <!-- Input Area -->
+              <div v-if="currentSessionId" class="p-6 bg-transparent pb-8">
+                <div class="max-w-4xl mx-auto relative group">
+                   <div class="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl blur opacity-0 group-focus-within:opacity-100 transition duration-1000"></div>
+                   
+                   <div class="relative bg-gray-800 rounded-3xl border border-gray-700 shadow-xl overflow-hidden focus-within:border-gray-600 transition-colors">
+                      <textarea
+                        v-model="userInput"
+                        @keydown.enter.exact.prevent="sendMessage"
+                        class="w-full bg-transparent text-gray-100 placeholder-gray-500 px-6 py-4 pr-16 focus:outline-none transition-all resize-none text-base max-h-64 custom-scrollbar"
+                        rows="1"
+                        placeholder="Message Callbox..."
+                        :disabled="isThinking"
+                        @input="(e: Event) => { 
+                          const target = e.target as HTMLTextAreaElement;
+                          target.style.height = 'auto'; 
+                          target.style.height = target.scrollHeight + 'px' 
+                        }"
+                      ></textarea>
+                      
+                       <div class="absolute right-2 bottom-2 flex items-center">
+                        <button 
+                          @click="sendMessage"
+                          :disabled="!userInput.trim() || isThinking"
+                          class="p-2.5 rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 active:scale-95 flex items-center justify-center"
+                          :class="userInput.trim() ? 'bg-blue-600 hover:bg-blue-500' : 'bg-transparent text-gray-500 hover:bg-gray-700'"
+                        >
+                          <svg v-if="!isThinking" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                             <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                          </svg>
+                          <div v-else class="h-5 w-5 border-2 border-t-transparent border-gray-400 rounded-full animate-spin"></div>
+                        </button>
+                      </div>
+                   </div>
+                </div>
+                <div class="text-center mt-3 text-xs text-gray-500 font-medium">
+                  Callbox can make mistakes. Please double check responses.
+                </div>
+              </div>
             </div>
-            <div class="text-center mt-3 text-xs text-gray-500 font-medium">
-              Callbox can make mistakes. Please double check responses.
-            </div>
-          </div>
         </div>
-    </div>
+    </Transition>
   </div>
 </template>
 
 <style scoped>
+/* Page Transition */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: all 0.8s ease-in-out;
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: scale(0.95);
+  filter: blur(10px);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+  transform: scale(1.05);
+  filter: blur(10px);
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;

@@ -6,6 +6,7 @@ import { SparklesIcon, ChartBarIcon, CpuChipIcon } from '@heroicons/vue/24/solid
 const emit = defineEmits(['login-success'])
 const errorMsg = ref('')
 const isVerifying = ref(false)
+const isSuccess = ref(false)
 
 const handleGoogleLogin = async () => {
   errorMsg.value = ''
@@ -42,14 +43,22 @@ const verifyToken = async (response: any) => {
         
         if (verifyRes.ok) {
             const userData = await verifyRes.json()
-            emit('login-success', userData)
+            
+            // Success Transition
+            isVerifying.value = false
+            isSuccess.value = true
+            
+            // Wait for animation before emitting (1.5s)
+            setTimeout(() => {
+                emit('login-success', userData)
+            }, 1500)
         } else {
             errorMsg.value = 'Failed to verify session.'
+            isVerifying.value = false
         }
      } catch (e) {
         console.error(e)
         errorMsg.value = 'Network error verifying session.'
-     } finally {
         isVerifying.value = false
      }
   }
@@ -101,40 +110,39 @@ const slides = [
     }
 ]
 
+onMounted(() => {
+    timer.value = setInterval(() => {
+        currentSlide.value = (currentSlide.value + 1) % slides.length
+    }, 10000)
+})
 
-        onMounted(() => {
-            timer.value = setInterval(() => {
-                currentSlide.value = (currentSlide.value + 1) % slides.length
-            }, 10000)
-        })
+onUnmounted(() => {
+    if (timer.value) clearInterval(timer.value)
+})
+</script>
 
-        onUnmounted(() => {
-            if (timer.value) clearInterval(timer.value)
-        })
-        </script>
+<template>
+  <div class="grid grid-cols-1 md:grid-cols-2 h-screen w-full bg-gray-900 border-x border-gray-700">
+    <!-- Left Column: Branding & Marketing -->
+    <div class="hidden md:flex flex-col justify-between p-12 bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white relative overflow-hidden">
+       <!-- Decorative background elements -->
+       <div class="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none transition-all duration-1000" :class="slides[currentSlide].bgClass"></div>
+       <div class="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none transition-all duration-1000" :class="slides[currentSlide].bgClassBottom"></div>
 
-        <template>
-          <div class="grid grid-cols-1 md:grid-cols-2 h-screen w-full bg-gray-900 border-x border-gray-700">
-            <!-- Left Column: Branding & Marketing -->
-            <div class="hidden md:flex flex-col justify-between p-12 bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white relative overflow-hidden">
-               <!-- Decorative background elements -->
-               <div class="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none transition-all duration-1000" :class="slides[currentSlide].bgClass"></div>
-               <div class="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none transition-all duration-1000" :class="slides[currentSlide].bgClassBottom"></div>
-        
-               <div class="z-10 h-full flex flex-col justify-between">
-                  <!-- Logo -->
-                  <div class="flex items-center gap-3 mb-8">
-                     <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center shadow-lg shadow-amber-900/20">
-                       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
-                         <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-                         <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
-                       </svg>
-                     </div>
-                     <span class="text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">Callbox Assistant</span>
-                  </div>
-                  
-                  <!-- Carousel Content -->
-                  <div class="relative flex-1 flex flex-col justify-center">
+       <div class="z-10 h-full flex flex-col justify-between">
+          <!-- Logo -->
+          <div class="flex items-center gap-3 mb-8">
+             <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center shadow-lg shadow-amber-900/20">
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                 <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
+                 <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
+               </svg>
+             </div>
+             <span class="text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">Callbox Assistant</span>
+          </div>
+          
+          <!-- Carousel Content -->
+          <div class="relative flex-1 flex flex-col justify-center">
              <transition 
                 enter-active-class="transition-all duration-700 ease-out"
                 enter-from-class="opacity-0 translate-y-4"
@@ -201,11 +209,20 @@ const slides = [
                <!-- Full Width Google Login Button -->
                <button 
                   @click="handleGoogleLogin" 
-                  :disabled="isVerifying"
-                  class="w-full flex items-center justify-center relative bg-white text-gray-900 font-medium py-3 px-4 rounded-full hover:bg-gray-100 transition-all focus:ring-4 focus:ring-gray-700 focus:outline-none disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
+                  :disabled="isVerifying || isSuccess"
+                  class="w-full flex items-center justify-center relative font-medium py-3 px-4 rounded-full transition-all focus:ring-4 focus:outline-none disabled:cursor-not-allowed overflow-hidden shadow-sm hover:shadow-md active:scale-95 duration-300"
+                  :class="isSuccess ? 'bg-green-500 text-white hover:bg-green-600 focus:ring-green-300' : 'bg-white text-gray-900 hover:bg-gray-100 focus:ring-gray-700'"
                >
+                  <!-- Success State -->
+                  <div v-if="isSuccess" class="absolute inset-0 flex items-center justify-center z-20 gap-2 animate-in fade-in zoom-in duration-300">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                       <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                     </svg>
+                     <span class="font-bold">Success!</span>
+                  </div>
+
                   <!-- Loading State (Absolute Overlay) -->
-                  <div v-if="isVerifying" class="absolute inset-0 bg-gray-200/50 flex items-center justify-center z-10 font-medium text-gray-700 gap-2">
+                  <div v-if="isVerifying" class="absolute inset-0 bg-gray-200/90 flex items-center justify-center z-10 font-medium text-gray-700 gap-2">
                      <svg class="animate-spin h-5 w-5 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -213,8 +230,8 @@ const slides = [
                      <span>Verifying...</span>
                   </div>
                   
-                  <!-- Original Content (Invisible when verifying to preserve size) -->
-                  <div class="flex items-center gap-3" :class="{ 'invisible': isVerifying }">
+                  <!-- Original Content (Invisible when verifying/success to preserve size) -->
+                  <div class="flex items-center gap-3 transition-opacity duration-300" :class="{ 'opacity-0': isVerifying || isSuccess }">
                       <!-- Google Icon -->
                       <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
