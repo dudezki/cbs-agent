@@ -8,5 +8,4 @@ export default defineConfig({
         vue(),
         tailwindcss(),
     ],
-    envDir: '..',
 })

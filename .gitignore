@@ -33,3 +33,4 @@ agent_sm/.adk/session.db
 agent_sm/credentials.json
 api/agent_sm/.adk/session.db
 api/agent_sm/credentials.json
+api/credentials.json

@@ -5,14 +5,18 @@ from google.adk.agents.parallel_agent import ParallelAgent
 from google.adk.tools.bigquery.bigquery_toolset import BigQueryToolset
 from google.adk.tools.bigquery.config import BigQueryToolConfig
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Set credentials path if not already set in environment
 if "GOOGLE_APPLICATION_CREDENTIALS" not in os.environ:
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    creds_path = os.path.join(current_dir, "credentials.json")
+    # credentials.json is likely in the 'api' folder (parent of 'agent_sm')
+    creds_path = os.path.join(os.path.dirname(current_dir), "credentials.json")
     if os.path.exists(creds_path):
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = creds_path
-        print(f"Loaded BigQuery credentials from: {creds_path}")
+        print(f"Loaded credentials from: {creds_path}")
     else:
         print(f"Warning: credentials.json not found at {creds_path}")
 
@@ -22,7 +26,7 @@ bq_config = BigQueryToolConfig(
 bq_toolset = BigQueryToolset(bigquery_tool_config=bq_config)
 
 content_creator = LlmAgent(
-    model='gemini-3-pro-preview',
+    model='gemini-2.5-flash',
     name='content_creator',
     description='Senior Data Analyst & Drafter responsible for extracting data and writing the initial report.',
     instruction=(
@@ -42,7 +46,7 @@ content_creator = LlmAgent(
 )
 
 auditor = LlmAgent(
-    model='gemini-3-pro-preview',
+    model='gemini-2.5-flash',
     name='auditor',
     description='Data Integrity & Compliance Auditor who verifies data usage and standards.',
     instruction=(
@@ -57,7 +61,7 @@ auditor = LlmAgent(
 )
 
 critic = LlmAgent(
-    model='gemini-3-pro-preview',
+    model='gemini-2.5-flash',
     name='critic',
     description='Senior Strategic Analyst who critiques reports for depth, logic, and value.',
     instruction=(
@@ -72,7 +76,7 @@ critic = LlmAgent(
 )
 
 refiner = LlmAgent(
-    model='gemini-3-pro-preview',
+    model='gemini-2.5-flash',
     name='refiner',
     description='Lead Editor who finalizes the report into a high-value professional deliverable.',
     instruction=(
@@ -87,7 +91,7 @@ refiner = LlmAgent(
 )
 
 title_agent = LlmAgent(
-    model='gemini-3-pro-preview',
+    model='gemini-2.5-flash',
     name='title_agent',
     description='Summarizes the initial conversation into a short title.',
     instruction=(
@@ -110,7 +114,7 @@ report_workflow = SequentialAgent(
 )
 
 casual_agent = LlmAgent(
-    model='gemini-3-pro-preview',
+    model='gemini-2.5-flash',
     name='casual_agent',
     description='A friendly AI assistant for casual conversation and queries.',
     instruction=(
@@ -124,7 +128,7 @@ casual_agent = LlmAgent(
 # The Manager is the Root Agent.
 # It holds the sub-agents and routes to them based on intent.
 root_agent = LlmAgent(
-    model='gemini-3-pro-preview',
+    model='gemini-2.5-flash',
     name='manager',
     description='Root agent that routes user requests to the appropriate specialist.',
     instruction=(

@@ -1,5 +1,39 @@
 import logging
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Monkey patch google-adk BEFORE any other imports that might use it
+from google.adk.models.google_llm import Gemini
+
+_PATCHED_CLIENTS = {}
+
+def get_vertex_client(project_id, location):
+    key = (project_id, location)
+    if key not in _PATCHED_CLIENTS:
+        from google import genai
+        _PATCHED_CLIENTS[key] = genai.Client(
+            vertexai=True,
+            project=project_id,
+            location=location
+        )
+    return _PATCHED_CLIENTS[key]
+
+@property
+def patched_api_client(self):
+    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", "callbox-core")
+    location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
+    return get_vertex_client(project_id, location)
+
+@property
+def patched_live_api_client(self):
+    return patched_api_client.fget(self)
+
+Gemini.api_client = patched_api_client
+Gemini._live_api_client = patched_live_api_client
+Gemini._api_backend = property(lambda self: 'vertex')
+
 import uvicorn
 from contextlib import asynccontextmanager
 from typing import Optional
@@ -188,14 +222,18 @@ def create_app(
                          if api_key:
                              client = genai.Client(api_key=api_key)
                          else:
-                             client = genai.Client(vertexai=True, project='callbox-core', location='us-central1')
+                             project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", "callbox-core")
+                             location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
+                             client = genai.Client(vertexai=True, project=project_id, location=location)
                          
                          response = client.models.generate_content(
                              model='gemini-2.5-flash', 
                              contents=[
-                                types.Content(role="system", parts=[types.Part(text=title_agent.instruction)]),
                                 types.Content(role="user", parts=[types.Part(text=topic_text)])
-                             ]
+                             ],
+                             config=types.GenerateContentConfig(
+                                 system_instruction=title_agent.instruction
+                             )
                          )
                          
                          title = response.text.strip() if response.text else "New Chat"
@@ -346,8 +384,10 @@ def create_app(
                             if api_key:
                                 client = genai.Client(api_key=api_key)
                             else:
-                                client = genai.Client(vertexai=True, project='callbox-core', location='us-central1')
-                            
+                                project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", "callbox-core")
+                                location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
+                                client = genai.Client(vertexai=True, project=project_id, location=location)
+                             
                             user_text = ""
                             if isinstance(new_message_data, dict):
                                 parts = new_message_data.get('parts', [])
@@ -359,8 +399,11 @@ def create_app(
                             response = client.models.generate_content(
                                 model='gemini-2.5-flash', 
                                 contents=[
-                                    types.Content(role="user", parts=[types.Part(text=f"{title_prompt}\nMessage: {user_text}")])
-                                ]
+                                    types.Content(role="user", parts=[types.Part(text=f"Message: {user_text}")])
+                                ],
+                                config=types.GenerateContentConfig(
+                                    system_instruction=title_prompt
+                                )
                             )
                             title = response.text.strip() if response.text else "New Chat"
                             title = title.replace('"', '').replace("'", "")
