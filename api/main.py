@@ -4,6 +4,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+def bootstrap_credentials():
+    """Handle literal JSON in GOOGLE_APPLICATION_CREDENTIALS (common in Secret Manager setups)"""
+    creds = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+    if creds and creds.strip().startswith("{"):
+        import tempfile
+        # Write to a secure temp file
+        fd, path = tempfile.mkstemp(suffix=".json")
+        with os.fdopen(fd, 'w') as tmp:
+            tmp.write(creds)
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = path
+        print(f"INFO: Detected literal JSON in GOOGLE_APPLICATION_CREDENTIALS. Saved to {path}")
+
+bootstrap_credentials()
+
 # Monkey patch google-adk BEFORE any other imports that might use it
 from google.adk.models.google_llm import Gemini
 
