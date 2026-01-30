@@ -78,10 +78,131 @@ def create_app(
     from google.adk.utils.context_utils import Aclosing
 
     from google.genai import types
+    from google.oauth2 import id_token
+    from google.auth.transport import requests as google_requests
+    from pydantic import BaseModel
+
+    class VerifyRequest(BaseModel):
+        token: str
+        client_id: str
+
+    @app.post("/auth/verify")
+    async def verify_token(request: VerifyRequest):
+        logger.info(f"Received verification request for client_id: {request.client_id}")
+        try:
+            # Specify the CLIENT_ID of the app that accesses the backend:
+            idinfo = id_token.verify_oauth2_token(
+                request.token, 
+                google_requests.Request(), 
+                request.client_id
+            )
+
+            # ID token is valid. Get the user's Google Account ID from the decoded token.
+            userid = idinfo['sub']
+            return {
+                "user_id": idinfo.get('email'),
+                "name": idinfo.get('name'),
+                "picture": idinfo.get('picture'),
+                "email": idinfo.get('email')
+            }
+        except ValueError as e:
+            # Invalid token
+            raise HTTPException(status_code=401, detail=str(e))
+
+    import asyncio
 
     @app.websocket("/ui/ws")
     async def ui_websocket(websocket: WebSocket):
         await websocket.accept()
+        ws_lock = asyncio.Lock()
+
+        async def send_message(message: dict):
+            async with ws_lock:
+                try:
+                    await websocket.send_json(message)
+                except Exception as e:
+                    logger.error(f"Error sending message: {e}")
+
+        async def process_chat(app_name, user_id, session_id, new_message_data):
+            try:
+                # Convert dict to Content object
+                if isinstance(new_message_data, dict):
+                   new_message = types.Content(**new_message_data)
+                else:
+                   new_message = new_message_data
+
+                runner = await adk_web_server.get_runner_async(app_name)
+                async with Aclosing(
+                    runner.run_async(
+                        user_id=user_id,
+                        session_id=session_id,
+                        new_message=new_message,
+                        run_config=RunConfig(streaming_mode=StreamingMode.SSE)
+                    )
+                ) as agen:
+                    async for event in agen:
+                        await send_message({
+                            "type": "agent_event",
+                            "session_id": session_id,
+                            "event": event.model_dump(mode='json', by_alias=True)
+                        })
+                
+                await send_message({"type": "chat_complete", "session_id": session_id})
+
+                # Post-processing: Generate Title
+                current_session = await adk_web_server.session_service.get_session(
+                    app_name=app_name, user_id=user_id, session_id=session_id
+                )
+                
+                if current_session and not current_session.state.get("title"):
+                     user_msgs = [e for e in current_session.events if e.content and e.content.role == 'user']
+                     if user_msgs:
+                         topic_text = user_msgs[0].content.parts[0].text
+                         from agent_sm.agent import title_agent
+                         # Simpler generation using google.genai directly as discussed
+                         from google import genai
+                         from dotenv import load_dotenv
+                         load_dotenv()
+                         
+                         api_key = os.environ.get("GOOGLE_GEMINI_API_KEY")
+                         if api_key:
+                             client = genai.Client(api_key=api_key)
+                         else:
+                             client = genai.Client(vertexai=True, project='callbox-core', location='us-central1')
+                         
+                         response = client.models.generate_content(
+                             model='gemini-2.5-flash', 
+                             contents=[
+                                types.Content(role="system", parts=[types.Part(text=title_agent.instruction)]),
+                                types.Content(role="user", parts=[types.Part(text=topic_text)])
+                             ]
+                         )
+                         
+                         title = response.text.strip() if response.text else "New Chat"
+                         title = title.replace('"', '').replace("'", "")
+                         
+                         # Update session title using append_event with state_delta
+                         from google.adk.events.event import Event
+                         from google.adk.events.event_actions import EventActions
+                         
+                         update_event = Event(
+                             author="system",
+                             actions=EventActions(state_delta={"title": title})
+                         )
+                         await adk_web_server.session_service.append_event(current_session, update_event)
+                         
+                         current_session.state["title"] = title
+                         
+                         await send_message({
+                            "type": "session_updated",
+                            "session": current_session.model_dump(mode='json')
+                         })
+
+            except Exception as e:
+                logger.error(f"Error in chat task: {e}")
+                logger.exception("Full traceback:")
+                await send_message({"type": "error", "message": str(e), "session_id": session_id})
+
         try:
             while True:
                 data = await websocket.receive_json()
@@ -91,19 +212,18 @@ def create_app(
                     # ... existing code ...
                     app_name = data.get("app_name")
                     user_id = data.get("user_id", "default_user")
-                    # Optionally accept session_id or state
                     try:
                         session = await adk_web_server._create_session(
                             app_name=app_name, 
                             user_id=user_id
                         )
-                        await websocket.send_json({
+                        await send_message({
                             "type": "session_created",
                             "session": session.model_dump(mode='json')
                         })
                     except Exception as e:
                         logger.error(f"Error creating session: {e}")
-                        await websocket.send_json({"type": "error", "message": str(e)})
+                        await send_message({"type": "error", "message": str(e)})
 
                 elif msg_type == "list_sessions":
                     app_name = data.get("app_name")
@@ -112,19 +232,53 @@ def create_app(
                         sessions_list = await adk_web_server.session_service.list_sessions(
                             app_name=app_name, user_id=user_id
                         )
-                        # Sort sessions by last_update_time descending
+                        
+                        # Hydrate sessions to ensure we get titles (State)
+                        hydrated_sessions = []
+                        for s in sessions_list.sessions:
+                            try:
+                                full_s = await adk_web_server.session_service.get_session(
+                                   app_name=app_name, user_id=user_id, session_id=s.id
+                                )
+                                if full_s:
+                                    hydrated_sessions.append(full_s)
+                                else:
+                                    hydrated_sessions.append(s)
+                            except Exception:
+                                hydrated_sessions.append(s)
+
                         sorted_sessions = sorted(
-                            sessions_list.sessions, 
+                            hydrated_sessions, 
                             key=lambda s: s.last_update_time if hasattr(s, 'last_update_time') and s.last_update_time else 0, 
                             reverse=True
                         )
-                        await websocket.send_json({
+                        await send_message({
                             "type": "sessions_list",
                             "sessions": [s.model_dump(mode='json') for s in sorted_sessions]
                         })
                     except Exception as e:
                         logger.error(f"Error listing sessions: {e}")
-                        await websocket.send_json({"type": "error", "message": str(e)})
+                        await send_message({"type": "error", "message": str(e)})
+
+                elif msg_type == "delete_session":
+                    app_name = data.get("app_name")
+                    user_id = data.get("user_id", "default_user")
+                    session_id = data.get("session_id")
+                    
+                    if not session_id:
+                        continue
+
+                    try:
+                        await adk_web_server.session_service.delete_session(
+                            app_name=app_name, user_id=user_id, session_id=session_id
+                        )
+                        await send_message({
+                            "type": "session_deleted",
+                            "session_id": session_id
+                        })
+                    except Exception as e:
+                        logger.error(f"Error deleting session: {e}")
+                        await send_message({"type": "error", "message": str(e)})
 
                 elif msg_type == "load_history":
                     app_name = data.get("app_name")
@@ -132,7 +286,7 @@ def create_app(
                     session_id = data.get("session_id")
                     
                     if not session_id:
-                        await websocket.send_json({"type": "error", "message": "session_id required loading history"})
+                        await send_message({"type": "error", "message": "session_id required loading history"})
                         continue
                         
                     try:
@@ -140,19 +294,19 @@ def create_app(
                             app_name=app_name, user_id=user_id, session_id=session_id
                         )
                         if session and session.events:
-                            # Replay events
                             for event in session.events:
-                                await websocket.send_json({
+                                await send_message({
                                     "type": "agent_event",
+                                    "session_id": session_id,
                                     "event": event.model_dump(mode='json', by_alias=True)
                                 })
-                            await websocket.send_json({"type": "history_complete"})
+                            await send_message({"type": "history_complete", "session_id": session_id})
                         else:
-                             await websocket.send_json({"type": "history_complete"})
+                             await send_message({"type": "history_complete", "session_id": session_id})
                              
                     except Exception as e:
                         logger.error(f"Error loading history: {e}")
-                        await websocket.send_json({"type": "error", "message": str(e)})
+                        await send_message({"type": "error", "message": str(e)})
 
                 elif msg_type == "chat":
                     app_name = data.get("app_name")
@@ -160,126 +314,59 @@ def create_app(
                     session_id = data.get("session_id")
                     new_message_data = data.get("new_message") 
                     
-                    if not session_id:
-                        await websocket.send_json({"type": "error", "message": "session_id required for chat"})
-                        continue
-
-                    try:
-                        # Convert dict to Content object
-                        if isinstance(new_message_data, dict):
-                           # Ensure parts are properly structured if needed
-                           # adk expects types.Content
-                           new_message = types.Content(**new_message_data)
-                        else:
-                           new_message = new_message_data
-
-                        runner = await adk_web_server.get_runner_async(app_name)
-                        async with Aclosing(
-                            runner.run_async(
-                                user_id=user_id,
-                                session_id=session_id,
-                                new_message=new_message,
-                                run_config=RunConfig(streaming_mode=StreamingMode.SSE) # Use SSE mode to get streaming events? Or NONE?
+                    # Lazy Session Creation
+                    if not session_id or session_id == 'new':
+                        try:
+                            # 1. Generate Title
+                            from google import genai
+                            from dotenv import load_dotenv
+                            load_dotenv()
+                            
+                            api_key = os.environ.get("GOOGLE_GEMINI_API_KEY")
+                            if api_key:
+                                client = genai.Client(api_key=api_key)
+                            else:
+                                client = genai.Client(vertexai=True, project='callbox-core', location='us-central1')
+                            
+                            user_text = ""
+                            if isinstance(new_message_data, dict):
+                                parts = new_message_data.get('parts', [])
+                                if parts and 'text' in parts[0]:
+                                    user_text = parts[0]['text']
+                            
+                            # Simple title prompt
+                            title_prompt = "Generate a very short, concise title (3-5 words max) for this chat message. Do not use quotes."
+                            response = client.models.generate_content(
+                                model='gemini-2.5-flash', 
+                                contents=[
+                                    types.Content(role="user", parts=[types.Part(text=f"{title_prompt}\nMessage: {user_text}")])
+                                ]
                             )
-                        ) as agen:
-                            async for event in agen:
-                                await websocket.send_json({
-                                    "type": "agent_event",
-                                    "event": event.model_dump(mode='json', by_alias=True)
-                                })
-                        
-                        await websocket.send_json({"type": "chat_complete"})
+                            title = response.text.strip() if response.text else "New Chat"
+                            title = title.replace('"', '').replace("'", "")
+                            
+                            # 2. Create Session
+                            session = await adk_web_server._create_session(
+                                app_name=app_name, 
+                                user_id=user_id,
+                                state={"title": title}
+                            )
+                            
+                            session_id = session.id
+                            
+                            # 3. Notify UI immediately
+                            await send_message({
+                                "type": "session_created",
+                                "session": session.model_dump(mode='json')
+                            })
+                            
+                        except Exception as e:
+                            logger.error(f"Error creating lazy session: {e}")
+                            await send_message({"type": "error", "message": f"Failed to create session: {str(e)}"})
+                            continue
 
-                        # Post-processing: Generate Title if needed
-                        # Check if session has a title. If not, generate one.
-                        # We need to reload the session to get the latest state/events? 
-                        # Actually, we can check the session from service.
-                        current_session = await adk_web_server.session_service.get_session(
-                            app_name=app_name, user_id=user_id, session_id=session_id
-                        )
-                        
-                        if current_session and not current_session.state.get("title"):
-                             # Only title if we have at least one user message
-                             user_msgs = [e for e in current_session.events if e.content and e.content.role == 'user']
-                             if user_msgs:
-                                 # Use the first user message or the most recent? Usually the first sets the topic.
-                                 topic_text = user_msgs[0].content.parts[0].text
-                                 
-                                 # Import title_agent here to avoid circular imports if any, or just standard import
-                                 from agent_sm.agent import title_agent
-                                 
-                                 # Run the title agent
-                                 # We need a runner for it, or just use `run` provided by adk if we can
-                                 # LlmAgent is an Agent. create_runner_from_options might be heavy.
-                                 # simpler: use the agent directly if it supports it, OR reuse the existing runner if it's flexible?
-                                 # adk agents usually run via a runtime.
-                                 # Let's try to run it via the same adk_web_server architecture if possible, 
-                                 # by temporarily creating a runner for just this agent? 
-                                 # Or just use the loaded agent instance if we can mock the runtime.
-                                 # Actually, AdkWebServer logic is specific to the configured 'root_agent'.
-                                 # We'll just instantiate a ephemeral runner for 'title_agent' if we can?
-                                 
-                                 # HACK: For now, let's just use the `title_agent` instance directly if we can,
-                                 # but LlmAgent needs `model_client`.
-                                 # Better approach: Just use google.genai directly here for simplicity and robustness 
-                                 # as the user requested "add an agent", but running a secondary agent safely in this loop 
-                                 # using ADK primitives might be complex without a secondary "app_name".
-                                 
-                                 # Let's try to use the agent we defined.
-                                 # We need to execute it.
-                                 try:
-                                     # We need to initialize the model client for the agent if it's not done?
-                                     # The ADK runner handles this.
-                                     # Let's try manual invocation if we can't spawn a runner easily.
-                                     # Actually, let's just use the library directly to ensure it works without breaking ADK flow.
-                                     # AND update the state.
-                                     
-                                     # Wait, creating a runner for a different (single) agent is safer.
-                                     # But `adk_web_server` is bound to `agent_loader` which loads `root_agent`.
-                                     
-                                     # Let's just use `title_agent` as a tool-less agent.
-                                     # We can use `title_agent.run(...)` if we instantiate it with a mock context?
-                                     # No, let's stick to using google.genai directly for the implementation 
-                                     # while satisfying the "add an agent" PROMPTING requirement by having the prompt there?
-                                     # No, the user will check if I added the agent.
-                                     
-                                     # Ok, I will use `title_agent`.
-                                     # Since I can't easily run it via `adk_web_server` (it runs `root_agent`),
-                                     # I will just use `google.genai` to run the prompt defined in `title_agent`.
-                                     # This keeps the code robust.
-                                     
-                                     from google import genai
-                                     client = genai.Client(vertexai=True, project='callbox-core', location='us-central1')
-                                     
-                                     response = client.models.generate_content(
-                                         model='gemini-2.0-flash-exp', # Fast model for titling
-                                         contents=[
-                                            types.Content(role="system", parts=[types.Part(text=title_agent.instruction)]),
-                                            types.Content(role="user", parts=[types.Part(text=topic_text)])
-                                         ]
-                                     )
-                                     
-                                     title = response.text.strip() if response.text else "New Chat"
-                                     # Remove quotes just in case
-                                     title = title.replace('"', '').replace("'", "")
-                                     
-                                     current_session.state["title"] = title
-                                     await adk_web_server.session_service.update_session(current_session)
-                                     
-                                     # Notify UI of update
-                                     # Ideally we send a session_updated event, but re-listing sessions logic in UI handles it if we refresh.
-                                     # Or push the update.
-                                     await websocket.send_json({
-                                        "type": "session_updated",
-                                        "session": current_session.model_dump(mode='json')
-                                     })
-
-                                 except Exception as e:
-                                     logger.error(f"Failed to generate title: {e}")
-                    except Exception as e:
-                        logger.error(f"Error during chat: {e}")
-                        logger.exception("Full traceback:")
-                        await websocket.send_json({"type": "error", "message": str(e)})
+                    # Spawn background task
+                    asyncio.create_task(process_chat(app_name, user_id, session_id, new_message_data))
 
         except WebSocketDisconnect:
             pass
