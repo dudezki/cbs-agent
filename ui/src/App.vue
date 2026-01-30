@@ -881,7 +881,7 @@ onUnmounted(() => {
                   <div class="flex items-start gap-4">
                     <div
                       class="w-14 h-14 overflow-hidden flex-shrink-0 flex items-center justify-center transition-transform hover:scale-110">
-                      <img :src="selectedAgent?.avatar || '/Callie-avatar.png'"
+                      <img :src="selectedAgent?.avatar || '/callie-avatar.png'"
                         :alt="selectedAgent?.display_name || 'Callie'" class="w-full h-full object-cover" />
                     </div>
                     <div class="flex-1 min-w-0">

@@ -29,7 +29,7 @@ def init_db():
             "Specializes in marketing reports, sales analysis, and strategic data insights.",
             "Analytical, professional, and results-oriented. Focused on growth and ROI.",
             "Data Extraction -> Compliance Audit -> Strategic Critique -> Executive Report",
-            "/Callie-avatar-sm.png",
+            "/callie-avatar-sm.png",
             "Generate a quarterly sales report;Audit my latest CRM campaign;Analyze marketing ROI for last month"
         ),
         (
@@ -39,7 +39,7 @@ def init_db():
             "Focused on client relationship management, service delivery metrics, and satisfaction analysis.",
             "Attentive, professional, and proactive. Prioritizes client success and high-quality service delivery.",
             "Account Health Check -> Success Planning -> Service Optimization",
-            "/Callie-avatar-cs.png",
+            "/callie-avatar-cs.png",
             "Perform an account health check;Draft a client success plan;Analyze service delivery metrics"
         ),
         (
@@ -49,7 +49,7 @@ def init_db():
             "Handles internal administrative tasks, scheduling logic, and resource management.",
             "Precise, organized, and reliable. Values efficiency and structural integrity.",
             "Resource Auditing -> Schedule Optimization -> Logistics Planning",
-            "/Callie-avatar-admin.png",
+            "/callie-avatar-admin.png",
             "Audit internal resource usage;Optimize my team's schedule;Create a logistics planning draft"
         )
     ]
