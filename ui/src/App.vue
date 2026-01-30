@@ -481,7 +481,7 @@ onUnmounted(() => {
             <div v-if="sessions.length === 0" class="text-gray-500 text-center py-4 text-sm">
               No sessions yet
             </div>
-            <ul v-else class="space-y-1">
+            <ul v-else class="space-y-1 px-2">
               <li v-for="session in sessions" :key="session.id">
                 <button @click="selectSession(session.id)" :session-id="session.id"
                   class="w-full text-left py-3 px-4 rounded-xl text-sm transition-colors group flex items-center justify-between gap-2"
@@ -545,105 +545,103 @@ onUnmounted(() => {
 
         <!-- Right Main: Chat -->
         <div class="flex-1 flex flex-col bg-white dark:bg-gray-900 relative min-w-0">
-          <!-- Transparent Header with User Menu -->
-          <header class="h-20 flex items-center justify-between px-6 pt-4 sticky top-0 z-20 pointer-events-none">
-            <!-- Title (Left) - Only show if session active -->
-            <div class="pointer-events-auto">
-              <h2 v-if="currentSessionId"
-                class="text-lg font-medium text-gray-200 opacity-0 lg:opacity-100 transition-opacity">
-                <!-- Hidden on mobile/small screens or just kept simple -->
-              </h2>
+          <!-- Top Absolute Header with Fade -->
+          <div v-if="currentSessionId" class="absolute top-0 left-0 right-0 z-40 pointer-events-none">
+            <!-- Smooth Gradient Overlay: Top (Solid) to Bottom (Transparent) -->
+            <div
+              class="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white via-white/80 to-transparent dark:from-gray-900 dark:via-gray-900/80 dark:to-transparent transition-colors duration-500">
             </div>
 
-            <!-- User Menu (Right) -->
-            <div class="flex items-center gap-3 pointer-events-auto user-menu-container">
-              <div class="relative">
-                <button @click="toggleUserMenu"
-                  class="flex items-center gap-4 focus:outline-none p-2 pl-6 pr-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm transition-all hover:border-gray-300 dark:hover:border-gray-600 shadow-md active:scale-95 group">
-                  <img :src="isDarkMode ? '/callbox-logo-white.svg' : '/callbox-logo.svg'" alt="Callbox" class="h-9" />
-                  <div
-                    class="w-10 h-10 rounded-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-inner group-hover:scale-105 transition-transform">
-                    <img :src="user.picture" class="w-full h-full object-cover" v-if="user.picture"
-                      referrerpolicy="no-referrer" />
+            <!-- Header Content -->
+            <header class="relative h-24 flex items-center justify-between px-6 pt-6 pointer-events-auto">
+              <div class="flex-1"></div>
+              <div class="flex items-center gap-3 user-menu-container">
+                <div class="relative">
+                  <button @click="toggleUserMenu"
+                    class="flex items-center gap-4 focus:outline-none p-2 pl-6 pr-2 rounded-full border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm transition-all hover:border-gray-300 dark:hover:border-gray-600 shadow-md active:scale-95 group">
+                    <img :src="isDarkMode ? '/callbox-logo-white.svg' : '/callbox-logo.svg'" alt="Callbox"
+                      class="h-9" />
                     <div
-                      class="w-full h-full bg-blue-500 flex items-center justify-center text-white font-bold text-base"
-                      v-else>
-                      {{ user.name ? user.name[0] : 'U' }}
-                    </div>
-                  </div>
-                </button>
-
-                <!-- Dropdown (Specific Layout from Image) -->
-                <div v-if="isUserMenuOpen"
-                  class="absolute right-0 top-full mt-3 w-80 bg-white dark:bg-[#28292c] rounded-[2rem] shadow-2xl border border-gray-200 dark:border-gray-700/50 overflow-hidden z-50 transform origin-top-right transition-all">
-
-                  <!-- Header: Email and Close Button -->
-                  <div class="flex flex-col items-center pt-8 px-8 relative">
-                    <button @click="toggleUserMenu"
-                      class="absolute right-6 top-6 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                    <div class="text-gray-800 dark:text-gray-200 text-sm font-semibold truncate max-w-full px-4">{{
-                      user.email }}</div>
-                    <div class="text-gray-500 dark:text-gray-400 text-[11px] mt-1">Managed by callboxinc.com</div>
-                  </div>
-
-                  <!-- Profile Picture & Welcome -->
-                  <div class="flex flex-col items-center py-6 px-8">
-                    <div class="relative mb-6">
+                      class="w-10 h-10 rounded-full overflow-hidden border border-gray-100 dark:border-gray-700 shadow-inner group-hover:scale-105 transition-transform">
+                      <img :src="user.picture" class="w-full h-full object-cover" v-if="user.picture"
+                        referrerpolicy="no-referrer" />
                       <div
-                        class="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-50 dark:border-gray-700/50 shadow-xl bg-amber-400 flex items-center justify-center text-4xl text-white font-bold">
-                        <img :src="user.picture" class="w-full h-full object-cover" v-if="user.picture"
-                          referrerpolicy="no-referrer" />
-                        <span v-else>{{ user.name ? user.name[0] : 'U' }}</span>
+                        class="w-full h-full bg-blue-500 flex items-center justify-center text-white font-bold text-base"
+                        v-else>{{ user.name ? user.name[0] : 'U' }}</div>
+                    </div>
+                  </button>
+
+                  <!-- Dropdown -->
+                  <Transition name="dropdown">
+                    <div v-if="isUserMenuOpen"
+                      class="absolute right-0 top-full mt-3 w-80 bg-white dark:bg-[#28292c] rounded-[2rem] shadow-2xl border border-gray-200 dark:border-gray-700/50 overflow-hidden z-50 transform origin-top-right transition-all">
+
+                      <div class="flex flex-col items-center pt-8 px-8 relative">
+                        <button @click="toggleUserMenu"
+                          class="absolute right-6 top-6 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                        <div class="text-gray-800 dark:text-gray-200 text-sm font-semibold truncate max-w-full px-4">{{
+                          user.email }}</div>
+                        <div class="text-gray-500 dark:text-gray-400 text-[11px] mt-1">Managed by callboxinc.com</div>
                       </div>
-                      <!-- Tiny Camera Overlay Item -->
+
+                      <div class="flex flex-col items-center py-6 px-8">
+                        <div class="relative mb-6">
+                          <div
+                            class="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-50 dark:border-gray-700/50 shadow-xl bg-amber-400 flex items-center justify-center text-4xl text-white font-bold">
+                            <img :src="user.picture" class="w-full h-full object-cover" v-if="user.picture"
+                              referrerpolicy="no-referrer" />
+                            <span v-else>{{ user.name ? user.name[0] : 'U' }}</span>
+                          </div>
+                          <div
+                            class="absolute bottom-0 right-0 bg-white dark:bg-gray-800 rounded-full p-2 border border-gray-200 dark:border-gray-700 shadow-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600 dark:text-gray-300"
+                              fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                          </div>
+                        </div>
+                        <h2 class="text-2xl font-normal text-gray-900 dark:text-white text-center">Hi, {{ user.name }} !
+                        </h2>
+                      </div>
+
+                      <div class="px-8 pb-8 flex flex-col items-center gap-4">
+                        <a href="https://myaccount.google.com/" target="_blank"
+                          class="block w-full text-center py-3 px-6 rounded-full border border-gray-200 dark:border-gray-600 text-blue-600 dark:text-[#a8c7fa] hover:bg-gray-50 dark:hover:bg-gray-700/50 text-[13px] font-semibold transition-all shadow-sm">
+                          Manage your Google Account
+                        </a>
+                        <button @click="handleLogout"
+                          class="mt-2 text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors text-xs font-medium uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded-lg text-center w-full">
+                          Sign out
+                        </button>
+                      </div>
+
                       <div
-                        class="absolute bottom-0 right-0 bg-white dark:bg-gray-800 rounded-full p-2 border border-gray-200 dark:border-gray-700 shadow-md">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600 dark:text-gray-300"
-                          fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
+                        class="bg-gray-50 dark:bg-gray-900/30 py-3 px-6 text-center text-[10px] text-gray-400 flex items-center justify-center gap-3">
+                        <a href="#" class="hover:text-gray-600 dark:hover:text-gray-200 transition-colors">Privacy
+                          Policy</a>
+                        <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700"></span>
+                        <a href="#" class="hover:text-gray-600 dark:hover:text-gray-200 transition-colors">Terms of
+                          Service</a>
                       </div>
                     </div>
-                    <h2 class="text-2xl font-normal text-gray-900 dark:text-white text-center">Hi, {{ user.name }} !
-                    </h2>
-                  </div>
-
-                  <!-- Action Buttons -->
-                  <div class="px-8 pb-8 flex flex-col items-center gap-4">
-                    <a href="https://myaccount.google.com/" target="_blank"
-                      class="block w-full text-center py-3 px-6 rounded-full border border-gray-200 dark:border-gray-600 text-blue-600 dark:text-[#a8c7fa] hover:bg-gray-50 dark:hover:bg-gray-700/50 text-[13px] font-semibold transition-all shadow-sm">
-                      Manage your Google Account
-                    </a>
-                    <button @click="handleLogout"
-                      class="mt-2 text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors text-xs font-medium uppercase tracking-widest bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded-lg text-center w-full">
-                      Sign out
-                    </button>
-                  </div>
-
-                  <div
-                    class="bg-gray-50 dark:bg-gray-900/30 py-3 px-6 text-center text-[10px] text-gray-400 flex items-center justify-center gap-3">
-                    <a href="#" class="hover:text-gray-600 dark:hover:text-gray-200 transition-colors">Privacy
-                      Policy</a>
-                    <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700"></span>
-                    <a href="#" class="hover:text-gray-600 dark:hover:text-gray-200 transition-colors">Terms of
-                      Service</a>
-                  </div>
+                  </Transition>
                 </div>
               </div>
-            </div>
-          </header>
+            </header>
+          </div>
 
           <!-- Messages Area -->
-          <div ref="chatContainer" class="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth custom-scrollbar"
+          <div ref="chatContainer"
+            class="h-full overflow-y-auto p-6 pt-24 pb-48 space-y-6 scroll-smooth custom-scrollbar"
             @click="handleChatClick">
             <div v-if="!currentSessionId"
               class="h-full flex flex-col items-center justify-center text-center p-8 relative overflow-hidden">
@@ -689,7 +687,7 @@ onUnmounted(() => {
                 class="h-full flex flex-col items-center justify-center -mt-20">
                 <div class="mb-10 text-center">
                   <h1 class="text-5xl font-medium mb-3">
-                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">Callbox
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">Cally
                       Assistant</span>
                   </h1>
                   <p class="text-xl text-gray-400 font-light">I'm ready whenever you are.</p>
@@ -770,7 +768,7 @@ onUnmounted(() => {
                       class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-4 w-4 bg-blue-500"></span>
                   </div>
-                  <span class="text-sm text-gray-400 font-medium">Callbox is thinking...</span>
+                  <span class="text-sm text-gray-400 font-medium">Cally is thinking...</span>
                 </div>
 
                 <details v-else
@@ -832,40 +830,62 @@ onUnmounted(() => {
             </template>
           </div>
 
-          <!-- Input Area -->
-          <div v-if="currentSessionId" class="p-6 bg-transparent pb-8">
-            <div class="max-w-4xl mx-auto relative group">
-              <div
-                class="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl blur opacity-0 group-focus-within:opacity-100 transition duration-1000">
-              </div>
+          <!-- Bottom Absolute Input with Fade (Gemini Style) -->
+          <div v-if="currentSessionId"
+            class="absolute bottom-0 left-0 right-0 z-30 pointer-events-none transition-all duration-500">
+            <!-- Smooth Gradient Overlay: Bottom (Solid) to Top (Transparent) -->
+            <div
+              class="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-white via-white/80 to-transparent dark:from-gray-900 dark:via-gray-900/80 dark:to-transparent">
+            </div>
 
-              <div
-                class="relative bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden focus-within:border-blue-400 dark:focus-within:border-gray-600 transition-all duration-300">
-                <textarea v-model="userInput" @keydown.enter.exact.prevent="sendMessage"
-                  class="w-full bg-transparent text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 px-6 py-4 pr-16 focus:outline-none transition-all resize-none text-base max-h-64 custom-scrollbar"
-                  rows="1" placeholder="Message Cally..." :disabled="isThinking" @input="(e: Event) => {
-                    const target = e.target as HTMLTextAreaElement;
-                    target.style.height = 'auto';
-                    target.style.height = target.scrollHeight + 'px'
-                  }"></textarea>
+            <!-- Input Container Content -->
+            <div class="relative max-w-4xl mx-auto p-6 pb-10 pointer-events-auto">
+              <div class="group relative">
+                <!-- Inner Pill Container -->
+                <div
+                  class="relative flex items-center gap-2 bg-[#f0f4f9] dark:bg-[#1e1f20] rounded-[32px] px-4 py-3 shadow-sm border border-transparent focus-within:shadow-lg focus-within:bg-white dark:focus-within:bg-[#282a2d] transition-all duration-300">
 
-                <div class="absolute right-2 bottom-2 flex items-center">
-                  <button @click="sendMessage" :disabled="!userInput.trim() || isThinking"
-                    class="p-2.5 rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 active:scale-95 flex items-center justify-center"
-                    :class="userInput.trim() ? 'bg-blue-600 hover:bg-blue-500' : 'bg-transparent text-gray-500 hover:bg-gray-700'">
-                    <svg v-if="!isThinking" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
-                      fill="currentColor">
-                      <path
-                        d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                  <!-- Left Accessory: Plus Icon -->
+                  <button
+                    class="p-2.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors shrink-0 active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
-                    <div v-else class="h-5 w-5 border-2 border-t-transparent border-gray-400 rounded-full animate-spin">
-                    </div>
                   </button>
+
+                  <!-- Main Input: Growing Textarea -->
+                  <textarea v-model="userInput" @keydown.enter.exact.prevent="sendMessage"
+                    class="flex-1 bg-transparent text-gray-800 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 px-2 py-2 focus:outline-none transition-all resize-none text-base max-h-64 custom-scrollbar"
+                    rows="1" placeholder="Message Cally..." :disabled="isThinking" @input="(e: Event) => {
+                      const target = e.target as HTMLTextAreaElement;
+                      target.style.height = 'auto';
+                      target.style.height = target.scrollHeight + 'px'
+                    }"></textarea>
+
+                  <!-- Right Accessory: Unified Send Action -->
+                  <div class="flex items-center gap-1 shrink-0">
+                    <button @click="sendMessage" :disabled="!userInput.trim() || isThinking"
+                      class="p-3 rounded-full transition-all duration-300 flex items-center justify-center active:scale-90"
+                      :class="userInput.trim()
+                        ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700'
+                        : 'text-gray-400 dark:text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700'">
+                      <svg v-if="!isThinking" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                      </svg>
+                      <div v-else
+                        class="h-6 w-6 border-2 border-t-transparent border-gray-400 rounded-full animate-spin">
+                      </div>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="text-center mt-3 text-xs text-gray-500 font-medium">
-              Callbox can make mistakes. Please double check responses.
+              <!-- Disclaimer -->
+              <div class="text-center mt-3 text-[11px] text-gray-500 dark:text-gray-400 font-normal">
+                Cally’s responses depend on the request and available data. Please verify important information.
+              </div>
             </div>
           </div>
         </div>
@@ -891,6 +911,19 @@ onUnmounted(() => {
   opacity: 0;
   transform: scale(1.05);
   filter: blur(10px);
+}
+
+/* Dropdown Animation */
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: scale(0.9) translateY(-10px);
+  filter: blur(4px);
 }
 
 .custom-scrollbar::-webkit-scrollbar {
