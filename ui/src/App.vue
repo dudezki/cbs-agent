@@ -826,7 +826,7 @@ onUnmounted(() => {
                 class="h-full flex flex-col items-center justify-center -mt-20">
                 <div class="mb-10 text-center">
                   <h1 class="text-5xl font-medium mb-3">
-                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">Cally
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">Callie
                       Assistant</span>
                   </h1>
                   <p class="text-xl text-gray-400 font-light">I'm ready whenever you are.</p>
@@ -869,8 +869,8 @@ onUnmounted(() => {
                   <div class="flex items-start gap-4">
                     <div
                       class="w-14 h-14 overflow-hidden flex-shrink-0 flex items-center justify-center transition-transform hover:scale-110">
-                      <img :src="selectedAgent?.avatar || '/cally-avatar.png'"
-                        :alt="selectedAgent?.display_name || 'Cally'" class="w-full h-full object-cover" />
+                      <img :src="selectedAgent?.avatar || '/Callie-avatar.png'"
+                        :alt="selectedAgent?.display_name || 'Callie'" class="w-full h-full object-cover" />
                     </div>
                     <div class="flex-1 min-w-0">
                       <div
@@ -908,7 +908,7 @@ onUnmounted(() => {
                   </div>
                   <span class="text-sm text-gray-600 dark:text-gray-400 font-medium">{{
                     selectedAgent?.display_name.split(' (')[0] ||
-                    'Cally' }} is thinking...</span>
+                    'Callie' }} is thinking...</span>
                 </div>
 
                 <details v-else
@@ -999,7 +999,7 @@ onUnmounted(() => {
                   <!-- Main Input: Growing Textarea -->
                   <textarea v-model="userInput" @keydown.enter.exact.prevent="sendMessage"
                     class="flex-1 bg-transparent text-gray-800 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 px-2 py-2 focus:outline-none transition-all resize-none text-base max-h-64 custom-scrollbar"
-                    rows="1" placeholder="Message Cally..." :disabled="isThinking" @input="(e: Event) => {
+                    rows="1" placeholder="Message Callie..." :disabled="isThinking" @input="(e: Event) => {
                       const target = e.target as HTMLTextAreaElement;
                       target.style.height = 'auto';
                       target.style.height = target.scrollHeight + 'px'
@@ -1026,7 +1026,7 @@ onUnmounted(() => {
               </div>
               <!-- Disclaimer -->
               <div class="text-center mt-3 text-[11px] text-gray-500 dark:text-gray-400 font-normal">
-                Cally’s responses depend on the request and available data. Please verify important information.
+                Callie’s responses depend on the request and available data. Please verify important information.
               </div>
             </div>
           </div>
@@ -1044,7 +1044,8 @@ onUnmounted(() => {
             class="px-8 pt-8 pb-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700/50">
             <div>
               <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Choose an Assistant</h2>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Select the specialized Cally that fits your task.
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Select the specialized Callie that fits your
+                task.
               </p>
             </div>
             <button @click="isAgentsModalOpen = false"
@@ -1151,7 +1152,7 @@ onUnmounted(() => {
                 class="w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center shadow-lg mb-4">
                 <img :src="isDarkMode ? '/callbox-logo-white.svg' : '/callbox-logo.svg'" class="h-8" />
               </div>
-              <h3 class="text-xl font-bold text-gray-900 dark:text-white">Cally Agent Platform</h3>
+              <h3 class="text-xl font-bold text-gray-900 dark:text-white">Callie Agent Platform</h3>
               <p class="text-sm text-gray-500 mt-1">Version 1.2.0 • Stable Release</p>
             </div>
 

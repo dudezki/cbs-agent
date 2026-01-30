@@ -115,10 +115,10 @@ report_workflow = SequentialAgent(
 
 casual_agent = LlmAgent(
     model='gemini-2.5-flash',
-    name='cally_admin',
+    name='Callie_admin',
     description='A specialized Administrative assistant.',
     instruction=(
-        "You are Cally, an Administrative Specialist assistant.\n"
+        "You are Callie, an Administrative Specialist assistant.\n"
         "Your focus is on organizational logistics, scheduling logic, and administrative efficiency.\n"
         "Engage in professional conversation and assist with administrative tasks."
     ),
@@ -131,7 +131,7 @@ root_agent = LlmAgent(
     description='Root agent for Administrative specialized tasks.',
     instruction=(
         "You are the Administrative Manager AI.\n"
-        "Coordinate administrative requests and handle general queries via cally_admin."
+        "Coordinate administrative requests and handle general queries via Callie_admin."
     ),
     sub_agents=[casual_agent]
 )

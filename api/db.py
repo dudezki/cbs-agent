@@ -25,31 +25,31 @@ def init_db():
         (
             str(uuid.uuid4()), 
             "agent_sm", 
-            "Cally (Strategic Marketing)", 
+            "Callie (Strategic Marketing)", 
             "Specializes in marketing reports, sales analysis, and strategic data insights.",
             "Analytical, professional, and results-oriented. Focused on growth and ROI.",
             "Data Extraction -> Compliance Audit -> Strategic Critique -> Executive Report",
-            "/cally-avatar-sm.png",
+            "/Callie-avatar-sm.png",
             "Generate a quarterly sales report;Audit my latest CRM campaign;Analyze marketing ROI for last month"
         ),
         (
             str(uuid.uuid4()), 
             "agent_cs", 
-            "Cally (Client Services)", 
+            "Callie (Client Services)", 
             "Focused on client relationship management, service delivery metrics, and satisfaction analysis.",
             "Attentive, professional, and proactive. Prioritizes client success and high-quality service delivery.",
             "Account Health Check -> Success Planning -> Service Optimization",
-            "/cally-avatar-cs.png",
+            "/Callie-avatar-cs.png",
             "Perform an account health check;Draft a client success plan;Analyze service delivery metrics"
         ),
         (
             str(uuid.uuid4()), 
             "agent_admin", 
-            "Cally (Administrative)", 
+            "Callie (Administrative)", 
             "Handles internal administrative tasks, scheduling logic, and resource management.",
             "Precise, organized, and reliable. Values efficiency and structural integrity.",
             "Resource Auditing -> Schedule Optimization -> Logistics Planning",
-            "/cally-avatar-admin.png",
+            "/Callie-avatar-admin.png",
             "Audit internal resource usage;Optimize my team's schedule;Create a logistics planning draft"
         )
     ]

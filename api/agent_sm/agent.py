@@ -115,7 +115,7 @@ report_workflow = SequentialAgent(
 
 casual_agent = LlmAgent(
     model='gemini-2.5-flash',
-    name='cally',
+    name='Callie',
     description='A friendly AI assistant for casual conversation and queries.',
     instruction=(
         "You are a helpful and friendly AI assistant.\n"

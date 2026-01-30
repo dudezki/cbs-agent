@@ -115,10 +115,10 @@ report_workflow = SequentialAgent(
 
 casual_agent = LlmAgent(
     model='gemini-2.5-flash',
-    name='cally_cs',
+    name='Callie_cs',
     description='A specialized Client Services AI assistant.',
     instruction=(
-        "You are Cally, a Client Services Specialist assistant.\n"
+        "You are Callie, a Client Services Specialist assistant.\n"
         "Your focus is on client relationship health, service delivery excellence, and account satisfaction.\n"
         "Engage in professional conversation and assist with client-related queries and success planning."
     ),
@@ -131,7 +131,7 @@ root_agent = LlmAgent(
     description='Root agent for Client Services specialized tasks.',
     instruction=(
         "You are the Client Services Manager AI.\n"
-        "Route users to the specialized client success workflows or handle general queries via cally_cs."
+        "Route users to the specialized client success workflows or handle general queries via Callie_cs."
     ),
     sub_agents=[casual_agent]
 )

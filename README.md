@@ -1,8 +1,8 @@
-# Callbox Assistant (Cally)
+# Callbox Assistant (Callie)
 
-**Cally** is a next-generation AI assistant platform designed to orchestrate digital workforces. It combines advanced reasoning capabilities (Gemini 3 Pro) with enterprise data integration (Google BigQuery) and a seamless, multi-agent chat interface.
+**Callie** is a next-generation AI assistant platform designed to orchestrate digital workforces. It combines advanced reasoning capabilities (Gemini 3 Pro) with enterprise data integration (Google BigQuery) and a seamless, multi-agent chat interface.
 
-![Cally UI](./ui/public/cally-ui-preview.png) *(Note: Add a screenshot here if available)*
+![Callie UI](./ui/public/Callie-ui-preview.png) *(Note: Add a screenshot here if available)*
 
 ## 🚀 Features
 

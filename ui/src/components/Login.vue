@@ -91,9 +91,9 @@ const slides = [
   },
   {
     title: 'Callbox + BigQuery<br/>+ Gemini 3 Pro =',
-    highlight: 'Cally',
+    highlight: 'Callie',
     highlightClass: 'text-purple-500 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400',
-    description: 'Experience the next generation of AI assistant. Cally combines deep reasoning with enterprise data access for unmatched capability.',
+    description: 'Experience the next generation of AI assistant. Callie combines deep reasoning with enterprise data access for unmatched capability.',
     bgClass: 'bg-purple-500/10',
     bgClassBottom: 'bg-amber-500/5',
     icon: markRaw(CpuChipIcon),
@@ -130,18 +130,20 @@ onUnmounted(() => {
 
       <div class="z-10 h-full flex flex-col justify-between">
 
-        <!-- Cally Branding -->
+        <!-- Callie Branding -->
         <div class="flex flex-col gap-6 mb-12">
           <div class="flex items-center gap-6 ">
             <img src="/callbox-logo-white.svg" alt="Callbox" class="h-46" />
-            <img src="/cally-brand-logo.png" alt="Cally" class="w-128 h-auto object-contain" />
+            <img src="/callie-brand-logo.png" alt="Callie" class="w-128 h-auto object-contain" />
           </div>
           <hr class="border-gray-700" />
           <div class="flex flex-row gap-20">
-            <p class="text-sm text-blue-200 uppercase tracking-widest font-bold mb-2">Cognitive AI for <br />Lifecycle &
-              Yield Orchestration</p>
+            <p class="text-sm text-blue-200 uppercase tracking-widest font-bold mb-2">Cognitive AI for Lifecycle &
+              <br />Intelligence Enablement
+            </p>
             <p class="text-gray-300 text-lg leading-relaxed max-w-lg font-light">
-              Cally is Callbox’s AI platform that coordinates insights, actions, and decisions across teams and clients.
+              Callie is Callbox’s AI platform that coordinates insights, actions, and decisions across teams and
+              clients.
             </p>
           </div>
         </div>
