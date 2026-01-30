@@ -29,7 +29,8 @@ const verifyToken = async (response: any) => {
     isVerifying.value = true
     try {
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
-      const verifyRes = await fetch('http://localhost:8000/auth/verify', {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      const verifyRes = await fetch(`${baseUrl}/auth/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -128,9 +129,21 @@ onUnmounted(() => {
         :class="slides[currentSlide].bgClassBottom"></div>
 
       <div class="z-10 h-full flex flex-col justify-between">
-        <!-- Logo - Made Bigger -->
-        <div class="flex items-center gap-3 mb-8">
-          <img src="/callbox-logo-white.svg" alt="Callbox" class="h-16" />
+
+        <!-- Cally Branding -->
+        <div class="flex flex-col gap-6 mb-12">
+          <div class="flex items-center gap-6 ">
+            <img src="/callbox-logo-white.svg" alt="Callbox" class="h-46" />
+            <img src="/cally-brand-logo.png" alt="Cally" class="w-128 h-auto object-contain" />
+          </div>
+          <hr class="border-gray-700" />
+          <div class="flex flex-row gap-20">
+            <p class="text-sm text-blue-200 uppercase tracking-widest font-bold mb-2">Cognitive AI for <br />Lifecycle &
+              Yield Orchestration</p>
+            <p class="text-gray-300 text-lg leading-relaxed max-w-lg font-light">
+              Cally is Callbox’s AI platform that coordinates insights, actions, and decisions across teams and clients.
+            </p>
+          </div>
         </div>
 
         <!-- Carousel Content -->
@@ -190,79 +203,79 @@ onUnmounted(() => {
           <h2 class="text-3xl font-bold mb-2">Welcome back</h2>
           <p class="text-gray-500">Please sign in to access your sessions.</p>
         </div>
+      </div>
 
-        <div class="flex flex-col gap-4">
-          <div class="w-full">
-            <!-- Full Width Google Login Button -->
-            <button @click="handleGoogleLogin" :disabled="isVerifying || isSuccess"
-              class="w-full flex items-center justify-center relative font-medium py-3 px-4 rounded-full transition-all focus:ring-4 focus:outline-none disabled:cursor-not-allowed overflow-hidden shadow-sm hover:shadow-md active:scale-95 duration-300 bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 focus:ring-gray-200">
-              <!-- Success State -->
-              <div v-if="isSuccess"
-                class="absolute inset-0 flex items-center justify-center z-20 gap-2 animate-in fade-in zoom-in duration-300 bg-green-500 text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 20 20"
-                  fill="currentColor">
-                  <path fill-rule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clip-rule="evenodd" />
-                </svg>
-                <span class="font-bold">Success!</span>
-              </div>
-
-              <!-- Loading State (Absolute Overlay) -->
-              <div v-if="isVerifying"
-                class="absolute inset-0 bg-gray-100 flex items-center justify-center z-10 font-medium text-gray-700 gap-2">
-                <svg class="animate-spin h-5 w-5 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none"
-                  viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                  </path>
-                </svg>
-                <span>Verifying...</span>
-              </div>
-
-              <!-- Original Content -->
-              <div class="flex items-center gap-3 transition-opacity duration-300"
-                :class="{ 'opacity-0': isVerifying || isSuccess }">
-                <!-- Google Icon -->
-                <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    fill="#4285F4" />
-                  <path
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    fill="#34A853" />
-                  <path
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    fill="#FBBC05" />
-                  <path
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    fill="#EA4335" />
-                </svg>
-
-                <span>Sign in with Google</span>
-              </div>
-            </button>
-          </div>
-
-          <div v-if="errorMsg" class="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
-            {{ errorMsg }}
-          </div>
-
-          <div class="relative my-6" v-else>
-            <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-gray-200"></div>
+      <div class="flex flex-col gap-4">
+        <div class="w-full">
+          <!-- Full Width Google Login Button -->
+          <button @click="handleGoogleLogin" :disabled="isVerifying || isSuccess"
+            class="w-full flex items-center justify-center relative font-medium py-3 px-4 rounded-full transition-all focus:ring-4 focus:outline-none disabled:cursor-not-allowed overflow-hidden shadow-sm hover:shadow-md active:scale-95 duration-300 bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 focus:ring-gray-200">
+            <!-- Success State -->
+            <div v-if="isSuccess"
+              class="absolute inset-0 flex items-center justify-center z-20 gap-2 animate-in fade-in zoom-in duration-300 bg-green-500 text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 20 20"
+                fill="currentColor">
+                <path fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd" />
+              </svg>
+              <span class="font-bold">Success!</span>
             </div>
-            <div class="relative flex justify-center text-sm">
-              <span class="px-2 bg-white text-gray-500">Secure Access</span>
+
+            <!-- Loading State (Absolute Overlay) -->
+            <div v-if="isVerifying"
+              class="absolute inset-0 bg-gray-100 flex items-center justify-center z-10 font-medium text-gray-700 gap-2">
+              <svg class="animate-spin h-5 w-5 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+              </svg>
+              <span>Verifying...</span>
             </div>
-          </div>
+
+            <!-- Original Content -->
+            <div class="flex items-center gap-3 transition-opacity duration-300"
+              :class="{ 'opacity-0': isVerifying || isSuccess }">
+              <!-- Google Icon -->
+              <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4" />
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853" />
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  fill="#FBBC05" />
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335" />
+              </svg>
+
+              <span>Sign in with Google</span>
+            </div>
+          </button>
         </div>
 
-        <p class="mt-8 text-center text-xs text-gray-500">
-          By continuing, you verify that you are an authorized user of Callbox Inc.
-        </p>
+        <div v-if="errorMsg" class="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
+          {{ errorMsg }}
+        </div>
+
+        <div class="relative my-6" v-else>
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-200"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-white text-gray-500">Secure Access</span>
+          </div>
+        </div>
       </div>
+
+      <p class="mt-8 text-center text-xs text-gray-500">
+        By continuing, you verify that you are an authorized user of Callbox Inc.
+      </p>
     </div>
   </div>
 </template>
