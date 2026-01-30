@@ -26,7 +26,7 @@ bq_config = BigQueryToolConfig(
 bq_toolset = BigQueryToolset(bigquery_tool_config=bq_config)
 
 content_creator = LlmAgent(
-    model='gemini-2.5-flash',
+    model='gemini-2.5-pro',
     name='writer',
     description='Senior Data Analyst & Drafter responsible for extracting data and writing the initial report.',
     instruction=(
@@ -69,7 +69,7 @@ content_creator = LlmAgent(
 )
 
 auditor = LlmAgent(
-    model='gemini-2.5-flash',
+    model='gemini-2.5-pro',
     name='auditor',
     description='Data Integrity & Compliance Auditor who verifies data usage and standards.',
     instruction=(
@@ -85,7 +85,7 @@ auditor = LlmAgent(
 )
 
 critic = LlmAgent(
-    model='gemini-2.5-flash',
+    model='gemini-2.5-pro',
     name='critic',
     description='Senior Strategic Analyst who critiques reports for depth, logic, and value.',
     instruction=(
@@ -100,7 +100,7 @@ critic = LlmAgent(
 )
 
 refiner = LlmAgent(
-    model='gemini-2.5-flash',
+    model='gemini-2.5-pro',
     name='refiner',
     description='Lead Editor who finalizes the report into a high-value professional deliverable.',
     instruction=(
@@ -116,7 +116,7 @@ refiner = LlmAgent(
 )
 
 title_agent = LlmAgent(
-    model='gemini-2.5-flash',
+    model='gemini-2.5-pro',
     name='title_agent',
     description='Summarizes the initial conversation into a short title.',
     instruction=(
@@ -139,7 +139,7 @@ report_workflow = SequentialAgent(
 )
 
 casual_agent = LlmAgent(
-    model='gemini-2.5-flash',
+    model='gemini-2.5-pro',
     name='Callie_admin',
     description='A specialized Administrative assistant.',
     instruction=(
@@ -152,7 +152,7 @@ casual_agent = LlmAgent(
 
 # The Manager is the Root Agent.
 root_agent = LlmAgent(
-    model='gemini-2.5-flash',
+    model='gemini-2.5-pro',
     name='manager_admin',
     description='Root agent for Administrative specialized tasks.',
     instruction=(
