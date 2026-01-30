@@ -231,7 +231,8 @@ const selectSession = (sessionId: string) => {
 
 const fetchAgents = async () => {
   try {
-    const resp = await fetch('/api/agents')
+    const baseUrl = import.meta.env.VITE_API_URL || ''
+    const resp = await fetch(`${baseUrl}/api/agents`)
     if (resp.ok) {
       agents.value = await resp.json()
       // Default to first agent if none selected or if selected agent not in list anymore
@@ -382,9 +383,18 @@ const handleMessage = (data: any) => {
 }
 
 const connectWebSocket = () => {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const wsUrl = `${protocol}//${window.location.host}/ui/ws`
-  const targetUrl = import.meta.env.DEV ? 'ws://localhost:8000/ui/ws' : wsUrl
+  const baseUrl = import.meta.env.VITE_API_URL || ''
+  let targetUrl = ''
+
+  if (baseUrl) {
+    // Replace http/https with ws/wss
+    const wsBase = baseUrl.replace(/^http/, 'ws')
+    targetUrl = `${wsBase}/ui/ws`
+  } else {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const wsUrl = `${protocol}//${window.location.host}/ui/ws`
+    targetUrl = import.meta.env.DEV ? 'ws://localhost:8000/ui/ws' : wsUrl
+  }
 
   socket.value = new WebSocket(targetUrl)
 
