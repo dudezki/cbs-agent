@@ -1169,7 +1169,7 @@ onUnmounted(() => {
                 <img :src="isDarkMode ? '/callbox-logo-white.svg' : '/callbox-logo.svg'" class="h-8" />
               </div>
               <h3 class="text-xl font-bold text-gray-900 dark:text-white">Callie Agent Platform</h3>
-              <p class="text-sm text-gray-500 mt-1">Version 1.2.0 • Stable Release</p>
+              <p class="text-sm text-gray-500 mt-1">Version 1.2.6 • Stable Release</p>
             </div>
 
             <div class="grid grid-cols-1 gap-4">
