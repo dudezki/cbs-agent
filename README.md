@@ -36,63 +36,61 @@
 - **Motion**: `@vueuse/motion`
 - **Auth**: `vue3-google-login`
 
-## 📦 Installation
+## 📦 Installation & Docker Setup
 
-### Prerequisites
-- Python 3.12+
-- Node.js 18+
-- Google Cloud Project with Vertex AI and OAuth configured.
+### 🐳 Docker (Recommended)
+You can run the entire application stack using Docker Compose.
 
-### 1. Clone the Repository
+1. **Clone the Repository**
+   ```bash
+   git clone git@github.com:dudezki/cbs-agent.git
+   cd cbs-agent
+   ```
+
+2. **Run with Docker Compose**
+   ```bash
+   docker-compose up --build
+   ```
+   - **UI**: [http://localhost:5173](http://localhost:5173)
+   - **API**: [http://localhost:8000](http://localhost:8000)
+
+---
+
+### 💻 Local Development (Manual)
+
+#### 1. Backend Setup
+The backend code is now located in the `api/` directory.
+
 ```bash
-git clone git@github.com:dudezki/cbs-agent.git
-cd cbs-agent
-```
+cd api
 
-### 2. Backend Setup
-```bash
 # Create virtual environment
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Create .env
+echo "GOOGLE_API_KEY=your_key" > .env
+... (add other keys)
+
+# Run Backend
+python main.py
 ```
 
-**Configuration**:
-Create a `.env` file in the root:
-```env
-GOOGLE_API_KEY=your_gemini_api_key
-GOOGLE_CLIENT_ID=your_oauth_client_id
-GOOGLE_CLIENT_SECRET=your_oauth_client_secret
-```
+#### 2. Frontend Setup
+The frontend code is in the `ui/` directory.
 
-### 3. Frontend Setup
 ```bash
 cd ui
 
 # Install dependencies
 npm install
 
-# Configure Environment
-echo "VITE_GOOGLE_CLIENT_ID=your_google_client_id" > .env
-```
-
-## 🏃‍♂️ Running the Application
-
-### Start Backend
-```bash
-# In the root directory
-./venv/bin/python main.py
-```
-The server will start at `http://localhost:8000`.
-
-### Start Frontend
-```bash
-# In the ui directory
+# Run Frontend
 npm run dev -- --host
 ```
-The UI will be available at `http://localhost:5173`.
 
 ## 🤝 Contributing
 1. Fork the Project
