@@ -103,7 +103,19 @@ def create_app(
     # Create FastAPI app
     app = adk_web_server.get_fast_api_app(
         web_assets_dir=web_assets_dir,
-        allow_origins=["*", "https://cbs-agent-ui-132501877056.us-central1.run.app"], # Allow all for development + UI Prod
+        allow_origins=["*"], # ADK internal CORS if any
+    )
+
+    from fastapi.middleware.cors import CORSMiddleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "https://cbs-agent-ui-132501877056.us-central1.run.app",
+            "http://localhost:5173",
+        ],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     from fastapi import WebSocket, WebSocketDisconnect

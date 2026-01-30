@@ -29,8 +29,16 @@ const verifyToken = async (response: any) => {
     isVerifying.value = true
     try {
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-      const verifyRes = await fetch(`${baseUrl}/auth/verify`, {
+      let baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      // Defensive check: if baseUrl contains spaces (pollution from other build args), take first part
+      if (baseUrl.includes(' ')) {
+        baseUrl = baseUrl.split(' ')[0]
+      }
+      // Ensure trailingslash-free base
+      baseUrl = baseUrl.replace(/\/$/, '')
+      const url = `${baseUrl}/auth/verify`
+      console.log("Verifying token at:", url)
+      const verifyRes = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -90,7 +98,7 @@ const slides = [
     featureDesc: 'Visualize trends and extract value from your data in seconds.'
   },
   {
-    title: 'Callbox + BigQuery<br/>+ Gemini 3 Pro =',
+    title: 'Callbox + BigQuery<br/>+ Vertex AI =',
     highlight: 'Callie',
     highlightClass: 'text-purple-500 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400',
     description: 'Experience the next generation of AI assistant. Callie combines deep reasoning with enterprise data access for unmatched capability.',
@@ -99,7 +107,7 @@ const slides = [
     icon: markRaw(CpuChipIcon),
     iconBgClass: 'bg-purple-500/10',
     iconColorClass: 'text-purple-500',
-    featureTitle: 'Gemini 3 Pro Powered',
+    featureTitle: 'Vertex AI Powered',
     featureDesc: 'Leveraging the latest reasoning models for complex problem solving.'
   }
 ]
@@ -132,16 +140,17 @@ onUnmounted(() => {
 
         <!-- Callie Branding -->
         <div class="flex flex-col gap-6 mb-12">
-          <div class="flex items-center gap-6 ">
-            <img src="/callbox-logo-white.svg" alt="Callbox" class="h-46" />
-            <img src="/callie-brand-logo.png" alt="Callie" class="w-128 h-auto object-contain" />
+          <div class="flex items-center gap-4 md:gap-6">
+            <img src="/callbox-logo-white.svg" alt="Callbox" class="h-10 md:h-12 w-auto" />
+            <div class="h-8 w-px bg-gray-700"></div>
+            <img src="/callie-brand-logo.png" alt="Callie" class="h-10 md:h-12 w-auto object-contain" />
           </div>
           <hr class="border-gray-700" />
-          <div class="flex flex-row gap-20">
-            <p class="text-sm text-blue-200 uppercase tracking-widest font-bold mb-2">Cognitive AI for Lifecycle &
-              <br />Intelligence Enablement
+          <div class="flex flex-col lg:flex-row gap-6 lg:gap-20">
+            <p class="text-xs md:text-sm text-blue-200 uppercase tracking-widest font-bold">
+              Cognitive AI for Lifecycle & <br class="hidden lg:block" /> Intelligence Enablement
             </p>
-            <p class="text-gray-300 text-lg leading-relaxed max-w-lg font-light">
+            <p class="text-gray-300 text-base md:text-lg leading-relaxed max-w-lg font-light">
               Callie is Callbox’s AI platform that coordinates insights, actions, and decisions across teams and
               clients.
             </p>
@@ -201,6 +210,12 @@ onUnmounted(() => {
     <!-- Right Column: Login Form - ALWAYS LIGHT -->
     <div class="flex flex-col items-center justify-center p-8 bg-white text-gray-900 relative">
       <div class="w-full max-w-sm">
+        <!-- Mobile Logo Section -->
+        <div class="flex items-center justify-center gap-4 mb-10 md:hidden">
+          <img src="/callbox-logo.svg" alt="Callbox" class="h-8 w-auto" />
+          <div class="h-6 w-px bg-gray-200"></div>
+          <img src="/callie-brand-logo.png" alt="Callie" class="h-8 w-auto object-contain" />
+        </div>
         <div class="mb-10 text-center md:text-left">
           <h2 class="text-3xl font-bold mb-2">Welcome back</h2>
           <p class="text-gray-500">Please sign in to access your sessions.</p>

@@ -231,8 +231,16 @@ const selectSession = (sessionId: string) => {
 
 const fetchAgents = async () => {
   try {
-    const baseUrl = import.meta.env.VITE_API_URL || ''
-    const resp = await fetch(`${baseUrl}/api/agents`)
+    let baseUrl = import.meta.env.VITE_API_URL || ''
+    // Defensive check: if baseUrl contains spaces (pollution from other build args), take first part
+    if (baseUrl.includes(' ')) {
+      baseUrl = baseUrl.split(' ')[0]
+    }
+    // Ensure trailingslash-free base
+    baseUrl = baseUrl.replace(/\/$/, '')
+    const url = `${baseUrl}/api/agents`
+    console.log("Fetching agents from:", url)
+    const resp = await fetch(url)
     if (resp.ok) {
       agents.value = await resp.json()
       // Default to first agent if none selected or if selected agent not in list anymore
@@ -383,12 +391,16 @@ const handleMessage = (data: any) => {
 }
 
 const connectWebSocket = () => {
-  const baseUrl = import.meta.env.VITE_API_URL || ''
+  let baseUrl = import.meta.env.VITE_API_URL || ''
+  // Defensive check: if baseUrl contains spaces (pollution from other build args), take first part
+  if (baseUrl.includes(' ')) {
+    baseUrl = baseUrl.split(' ')[0]
+  }
   let targetUrl = ''
 
   if (baseUrl) {
-    // Replace http/https with ws/wss
-    const wsBase = baseUrl.replace(/^http/, 'ws')
+    // Replace http/https with ws/wss and strip trailing slash
+    const wsBase = baseUrl.replace(/^http/, 'ws').replace(/\/$/, '')
     targetUrl = `${wsBase}/ui/ws`
   } else {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
