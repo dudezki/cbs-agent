@@ -132,18 +132,37 @@ onUnmounted(() => {
           
           <!-- Carousel Content -->
           <div class="relative flex-1 flex flex-col justify-center">
-             <transition-group name="fade" tag="div" class="relative hover:cursor-default">
-                <div v-for="(slide, index) in slides" :key="index" v-show="currentSlide === index" class="absolute inset-0 flex flex-col justify-center transition-all duration-700 ease-in-out">
-                    <h1 class="text-5xl font-extrabold leading-tight mb-6 text-white">
-                        <span class="block mb-2" v-html="slide.title"></span>
-                        <span :class="slide.highlightClass">{{ slide.highlight }}</span>
-                    </h1>
-                    <p class="text-lg text-gray-400 max-w-md leading-relaxed">
-                        {{ slide.description }}
-                    </p>
+                <div v-for="(slide, index) in slides" :key="index" v-if="currentSlide === index" class="absolute inset-0 flex flex-col justify-center">
+                    <div 
+                        v-motion
+                        :initial="{ opacity: 0, y: 20 }"
+                        :enter="{ opacity: 1, y: 0, transition: { duration: 600, type: 'spring', stiffness: 50, damping: 15 } }"
+                        :leave="{ opacity: 0, y: -20, transition: { duration: 400 } }"
+                    >
+                        <h1 class="text-5xl font-extrabold leading-tight mb-6 text-white">
+                            <span class="block mb-2" v-html="slide.title"></span>
+                            <span :class="slide.highlightClass">{{ slide.highlight }}</span>
+                        </h1>
+                    </div>
+                    
+                    <div 
+                        v-motion
+                        :initial="{ opacity: 0, y: 20 }"
+                        :enter="{ opacity: 1, y: 0, transition: { delay: 100, duration: 600, type: 'spring' } }"
+                        :leave="{ opacity: 0, y: -20, transition: { duration: 300 } }"
+                    >
+                        <p class="text-lg text-gray-400 max-w-md leading-relaxed">
+                            {{ slide.description }}
+                        </p>
+                    </div>
                     
                     <!-- Feature Card for specific slide -->
-                     <div class="mt-12">
+                     <div class="mt-12"
+                        v-motion
+                        :initial="{ opacity: 0, scale: 0.9 }"
+                        :enter="{ opacity: 1, scale: 1, transition: { delay: 200, duration: 600, type: 'spring' } }"
+                        :leave="{ opacity: 0, scale: 0.95, transition: { duration: 300 } }"
+                     >
                         <div class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50 shadow-xl inline-block max-w-sm">
                             <div class="flex items-start gap-4">
                             <div class="p-2 rounded-lg" :class="slide.iconBgClass">
@@ -157,7 +176,6 @@ onUnmounted(() => {
                         </div>
                     </div>
                 </div>
-             </transition-group>
           </div>
 
           <!-- Indicators -->
