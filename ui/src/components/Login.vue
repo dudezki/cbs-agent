@@ -9,12 +9,14 @@ const isVerifying = ref(false)
 
 const handleGoogleLogin = async () => {
   errorMsg.value = ''
+  isVerifying.value = true // Start loading immediately
   try {
     const response = await googleTokenLogin()
     await verifyToken(response)
   } catch (error) {
     console.error("Google login failed", error)
     errorMsg.value = "Login cancelled or failed."
+    isVerifying.value = false // Reset on failure
   }
 }
 
