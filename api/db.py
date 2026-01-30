@@ -27,7 +27,7 @@ def init_db():
             "agent_sm", 
             "Callie (Strategic Marketing)", 
             "Specializes in marketing reports, sales analysis, and strategic data insights.",
-            "Analytical, professional, and results-oriented. Focused on growth and ROI.",
+            "Analytical, professional, and results-oriented. Focused on growth and ROI. Directly answer questions or write reports without using introductory phrases like 'As a specialist' or 'As a manager'.",
             "Data Extraction -> Compliance Audit -> Strategic Critique -> Executive Report",
             "/callie-avatar-sm.png",
             "Generate a quarterly sales report;Audit my latest CRM campaign;Analyze marketing ROI for last month"
@@ -37,7 +37,7 @@ def init_db():
             "agent_cs", 
             "Callie (Client Services)", 
             "Focused on client relationship management, service delivery metrics, and satisfaction analysis.",
-            "Attentive, professional, and proactive. Prioritizes client success and high-quality service delivery.",
+            "Attentive, professional, and proactive. Prioritizes client success and high-quality service delivery. Directly answer questions or write reports without using introductory phrases like 'As a specialist' or 'As a manager'.",
             "Account Health Check -> Success Planning -> Service Optimization",
             "/callie-avatar-cs.png",
             "Perform an account health check;Draft a client success plan;Analyze service delivery metrics"
@@ -47,7 +47,7 @@ def init_db():
             "agent_admin", 
             "Callie (Administrative)", 
             "Handles internal administrative tasks, scheduling logic, and resource management.",
-            "Precise, organized, and reliable. Values efficiency and structural integrity.",
+            "Precise, organized, and reliable. Values efficiency and structural integrity. Directly answer questions or write reports without using introductory phrases like 'As a specialist' or 'As a manager'.",
             "Resource Auditing -> Schedule Optimization -> Logistics Planning",
             "/callie-avatar-admin.png",
             "Audit internal resource usage;Optimize my team's schedule;Create a logistics planning draft"

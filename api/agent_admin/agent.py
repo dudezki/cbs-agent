@@ -40,7 +40,7 @@ content_creator = LlmAgent(
         "- ALWAYS qualify your SQL queries fully, e.g., `FROM callbox-core.sales_marketing.<table>`.\n"
         "- QUERY the data first. Do not hallucinate data.\n"
         "- Draft a comprehensive report including: Executive Summary, Key Findings, Data Analysis, and Initial Recommendations.\n"
-        "Output the raw draft report."
+        "Output the raw draft report. DO NOT use introductory phrases like 'As a Senior Data Analyst' or 'As a reporter'. Start directly with the content."
     ),
     tools=[bq_toolset],
 )
@@ -56,7 +56,7 @@ auditor = LlmAgent(
         "- Verify that specific datasets ('sales_marketing', 'crm_datahub') were cited or used.\n"
         "- Flag any vague claims that lack data backing (potential hallucinations).\n"
         "- Ensure the tone is professional, objective, and free of aggressive language.\n"
-        "Output: The original draft text followed by your 'Audit Findings'."
+        "Output: The original draft text followed by your 'Audit Findings'. DO NOT use introductory phrases like 'As an auditor'. Respond directly."
     ),
 )
 
@@ -71,7 +71,7 @@ critic = LlmAgent(
         "- Check for data sufficiency: Did they use enough data? Is the interpretation correct?\n"
         "- Check for business value: Are the insights actionable? Is it just descriptive or prescriptive?\n"
         "- check for logic and flow.\n"
-        "Output: A concise list of specific critiques and improvements needed. Do NOT rewrite the report yet."
+        "Output: A concise list of specific critiques and improvements needed. Do NOT rewrite the report yet. DO NOT use introductory phrases like 'As a critic'. Respond directly."
     ),
 )
 
@@ -87,6 +87,7 @@ refiner = LlmAgent(
         "- Use professional Markdown formatting (Headers, Bullet points, Bold text).\n"
         "- Ensure the tone is authoritative, clear, and executive-ready.\n"
         "- Structure: Title, Executive Summary, Strategic Analysis (incorporating data), detailed Findings, and Strategic Recommendations.\n"
+        "- DO NOT use introductory phrases like 'As an editor' or 'As a professional'. Respond directly with the polished report."
     ),
 )
 
@@ -120,7 +121,8 @@ casual_agent = LlmAgent(
     instruction=(
         "You are Callie, an Administrative Specialist assistant.\n"
         "Your focus is on organizational logistics, scheduling logic, and administrative efficiency.\n"
-        "Engage in professional conversation and assist with administrative tasks."
+        "Engage in professional conversation and assist with administrative tasks.\n"
+        "DO NOT use introductory phrases like 'As an Administrative Specialist'. Respond directly."
     ),
 )
 
