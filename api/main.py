@@ -129,12 +129,22 @@ def create_app(
     )
 
     from fastapi.middleware.cors import CORSMiddleware
+    origins = [
+        "https://cbs-agent-ui-132501877056.us-central1.run.app",
+        "http://localhost:5173",
+        "http://localhost:8080",
+        "http://localhost:3000",
+    ]
+    # In development, you might want to allow all origins
+    if os.environ.get("ENV") == "development" or not os.environ.get("GOOGLE_CLOUD_PROJECT"):
+        logger.info("Dev mode: Allowing all CORS origins.")
+        allow_all = True
+    else:
+        allow_all = False
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "https://cbs-agent-ui-132501877056.us-central1.run.app",
-            "http://localhost:5173",
-        ],
+        allow_origins=["*"] if allow_all else origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

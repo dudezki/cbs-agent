@@ -10,6 +10,9 @@ const md = new MarkdownIt({
   breaks: true
 })
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const WS_URL = API_URL.replace('http', 'ws')
+
 // Custom fence renderer for code blocks
 md.renderer.rules.fence = (tokens, idx, _options, _env, _self) => {
   const token = tokens[idx]
@@ -92,6 +95,7 @@ const user = ref<any>(null)
 const userId = computed(() => user.value ? user.value.email : 'default_user')
 
 // Check for existing session & agent
+console.log("App mounted. Config:", { API_URL, WS_URL })
 const storedUser = localStorage.getItem('cbx_user')
 if (storedUser) {
   try {
@@ -394,7 +398,8 @@ const handleMessage = (data: any) => {
 }
 
 const connectWebSocket = () => {
-  let baseUrl = import.meta.env.VITE_API_URL || ''
+  console.log("Connect to API:", API_URL)
+  let baseUrl = API_URL
   // Defensive check: if baseUrl contains spaces (pollution from other build args), take first part
   if (baseUrl.includes(' ')) {
     baseUrl = baseUrl.split(' ')[0]
@@ -408,7 +413,7 @@ const connectWebSocket = () => {
   } else {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const wsUrl = `${protocol}//${window.location.host}/ui/ws`
-    targetUrl = import.meta.env.DEV ? 'ws://localhost:8000/ui/ws' : wsUrl
+    targetUrl = import.meta.env.DEV ? 'ws://localhost:8080/ui/ws' : wsUrl
   }
 
   socket.value = new WebSocket(targetUrl)

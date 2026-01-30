@@ -30,7 +30,7 @@ const verifyToken = async (response: any) => {
     try {
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
       console.log("Using Google Client ID:", clientId)
-      let baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      let baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
       // Defensive check: if baseUrl contains spaces (pollution from other build args), take first part
       if (baseUrl.includes(' ')) {
         baseUrl = baseUrl.split(' ')[0]
