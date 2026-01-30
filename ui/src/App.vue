@@ -133,6 +133,7 @@ const agentThinking = ref<AgentEvent[]>([])
 const isThinking = ref(false)
 const userInput = ref('')
 const isConnected = ref(false)
+const connectionStatus = ref<'connecting' | 'connected' | 'disconnected'>('disconnected')
 const isHistoryLoading = ref(false)
 const isSessionsLoading = ref(false)
 const chatContainer = ref<HTMLElement | null>(null)
@@ -428,18 +429,21 @@ const connectWebSocket = () => {
   }
 
   console.log(`[v1.2.9] Attempting WebSocket connection: ${targetUrl}`)
+  connectionStatus.value = 'connecting'
   
   try {
     const ws = new WebSocket(targetUrl)
     socket.value = markRaw(ws)
   } catch (err) {
     console.error(`[v1.2.9] Failed to create WebSocket:`, err)
+    connectionStatus.value = 'disconnected'
     return
   }
 
   socket.value.onopen = () => {
     console.log('Connected to WebSocket')
     isConnected.value = true
+    connectionStatus.value = 'connected'
     listSessions()
   }
 
@@ -451,6 +455,7 @@ const connectWebSocket = () => {
   socket.value.onclose = () => {
     console.log('Disconnected from WebSocket')
     isConnected.value = false
+    connectionStatus.value = 'disconnected'
     if (user.value) { // Only reconnect if logged in
       setTimeout(connectWebSocket, 3000)
     }
@@ -575,10 +580,28 @@ onUnmounted(() => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <div v-if="!isSidebarCollapsed && isConnected"
-              class="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(74,222,128,0.6)]" title="Connected">
+            <!-- Connection Status Indicator -->
+            <div v-if="!isSidebarCollapsed" class="relative" 
+              :title="connectionStatus === 'connected' ? 'Connected' : connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected'"
+            >
+              <!-- Signal Icon -->
+              <svg class="w-5 h-5" :class="{
+                'text-green-500': connectionStatus === 'connected',
+                'text-red-500': connectionStatus !== 'connected',
+                'animate-pulse': connectionStatus === 'connecting'
+              }" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <!-- Signal bars -->
+                <path d="M2 20h2v-4H2v4zm5 0h2v-8H7v8zm5 0h2V10h-2v10zm5 0h2V4h-2v16z" opacity="1"/>
+                <!-- Weakest bar (always visible when any status) -->
+                <path d="M2 20h2v-4H2v4z" :opacity="connectionStatus === 'disconnected' ? '0.3' : '1'"/>
+                <!-- Medium bar -->
+                <path d="M7 20h2v-8H7v8z" :opacity="connectionStatus === 'disconnected' ? '0.3' : '1'"/>
+                <!-- Strong bar -->
+                <path d="M12 20h2V10h-2v10z" :opacity="connectionStatus === 'disconnected' ? '0.3' : (connectionStatus === 'connecting' ? '0.5' : '1')"/>
+                <!-- Strongest bar -->
+                <path d="M17 20h2V4h-2v16z" :opacity="connectionStatus === 'connected' ? '1' : '0.3'"/>
+              </svg>
             </div>
-            <div v-else-if="!isSidebarCollapsed" class="w-2.5 h-2.5 rounded-full bg-red-500" title="Disconnected"></div>
           </div>
 
           <div class="px-4 pb-4">
