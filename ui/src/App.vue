@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, shallowRef, onMounted, nextTick, watch, computed } from 'vue'
+import { ref, shallowRef, markRaw, onMounted, nextTick, watch, computed } from 'vue'
 import MarkdownIt from 'markdown-it'
 import Login from './components/Login.vue'
 
@@ -10,8 +10,19 @@ const md = new MarkdownIt({
   breaks: true
 })
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8080'
-const WS_URL = API_URL.replace('http', 'ws')
+// API Configuration
+const getBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL
+  if (envUrl && envUrl.trim()) {
+    // If it's a full URL, use it (and trim trailing slash)
+    return envUrl.trim().replace(/\/$/, '')
+  }
+  // Fallback for local development: use relative path to leverage Vite proxy
+  return import.meta.env.DEV ? '' : 'http://127.0.0.1:8080'
+}
+
+const API_URL = getBaseUrl()
+console.log(`[v1.2.9] API Base URL: "${API_URL || '(relative)'}"`)
 
 // Custom fence renderer for code blocks
 md.renderer.rules.fence = (tokens, idx, _options, _env, _self) => {
@@ -95,7 +106,7 @@ const user = shallowRef<any>(null)
 const userId = computed(() => user.value ? user.value.email : 'default_user')
 
 // Check for existing session & agent
-console.log("App mounted. Config:", { API_URL, WS_URL })
+console.log(`[v1.2.9] App mounted. API Base: "${API_URL || '(relative)'}"`)
 const storedUser = localStorage.getItem('cbx_user')
 if (storedUser) {
   try {
@@ -407,15 +418,24 @@ const connectWebSocket = () => {
   let targetUrl = ''
 
   if (baseUrl) {
-    const wsBase = baseUrl.replace(/^http/, 'ws').replace(/\/$/, '')
+    // Standardize to ws/wss and absolute path
+    const wsBase = baseUrl.replace(/^http/, 'ws')
     targetUrl = `${wsBase}/api/ws`
   } else {
+    // Relative path (localhost:5173/api/ws) -> handled by Vite proxy
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsUrl = `${protocol}//${window.location.host}/api/ws`
-    targetUrl = wsUrl
+    targetUrl = `${protocol}//${window.location.host}/api/ws`
   }
 
-  socket.value = new WebSocket(targetUrl)
+  console.log(`[v1.2.9] Attempting WebSocket connection: ${targetUrl}`)
+  
+  try {
+    const ws = new WebSocket(targetUrl)
+    socket.value = markRaw(ws)
+  } catch (err) {
+    console.error(`[v1.2.9] Failed to create WebSocket:`, err)
+    return
+  }
 
   socket.value.onopen = () => {
     console.log('Connected to WebSocket')
@@ -1173,7 +1193,7 @@ onUnmounted(() => {
                 <img :src="isDarkMode ? '/callbox-logo-white.svg' : '/callbox-logo.svg'" class="h-8" />
               </div>
               <h3 class="text-xl font-bold text-gray-900 dark:text-white">Callie Agent Platform</h3>
-              <p class="text-[10px] text-gray-500 font-mono opacity-50 select-none">v1.2.7 &bull; Direct Response Mode Enabled</p>
+              <p class="text-[10px] text-gray-500 font-mono opacity-50 select-none">v1.2.9 &bull; Direct Response Mode Enabled</p>
             </div>
 
             <div class="grid grid-cols-1 gap-4">
