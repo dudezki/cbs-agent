@@ -69,6 +69,7 @@ from google.adk.auth.credential_service.in_memory_credential_service import (
 from google.adk.cli.utils.evals import create_gcs_eval_managers_from_uri
 from google.adk.evaluation.local_eval_sets_manager import LocalEvalSetsManager
 from google.adk.evaluation.local_eval_set_results_manager import LocalEvalSetResultsManager
+from db import init_db
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -81,6 +82,13 @@ def create_app(
     web_assets_dir: Optional[str] = None,
 ) -> FastAPI:
     
+    # Initialize Database
+    try:
+        init_db()
+        logger.info("Database initialized successfully.")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
+
     # Initialize Eval Managers (Local default)
     eval_sets_manager = LocalEvalSetsManager(agents_dir=agents_dir)
     eval_set_results_manager = LocalEvalSetResultsManager(agents_dir=agents_dir)

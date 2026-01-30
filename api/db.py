@@ -23,7 +23,7 @@ def init_db():
     
     initial_agents = [
         (
-            str(uuid.uuid4()), 
+            "agent-sm-stable-id", 
             "agent_sm", 
             "Callie (Strategic Marketing)", 
             "Specializes in marketing reports, sales analysis, and strategic data insights.",
@@ -33,7 +33,7 @@ def init_db():
             "Generate a quarterly sales report;Audit my latest CRM campaign;Analyze marketing ROI for last month"
         ),
         (
-            str(uuid.uuid4()), 
+            "agent-cs-stable-id", 
             "agent_cs", 
             "Callie (Client Services)", 
             "Focused on client relationship management, service delivery metrics, and satisfaction analysis.",
@@ -43,7 +43,7 @@ def init_db():
             "Perform an account health check;Draft a client success plan;Analyze service delivery metrics"
         ),
         (
-            str(uuid.uuid4()), 
+            "agent-admin-stable-id", 
             "agent_admin", 
             "Callie (Administrative)", 
             "Handles internal administrative tasks, scheduling logic, and resource management.",
