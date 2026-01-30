@@ -119,6 +119,7 @@ const isThinking = ref(false)
 const userInput = ref('')
 const isConnected = ref(false)
 const isHistoryLoading = ref(false)
+const isSessionsLoading = ref(false)
 const chatContainer = ref<HTMLElement | null>(null)
 
 const complexAgents = ['content_creator', 'auditor', 'critic', 'refiner']
@@ -275,6 +276,7 @@ const selectAgent = (agent: Agent) => {
 
 const listSessions = () => {
   if (!socket.value) return
+  isSessionsLoading.value = true
   socket.value.send(JSON.stringify({
     type: 'list_sessions',
     app_name: appName.value,
@@ -348,6 +350,7 @@ const handleMessage = (data: any) => {
       }
     }
   } else if (data.type === 'sessions_list') {
+    isSessionsLoading.value = false
     sessions.value = data.sessions.sort((a: Session, b: Session) => {
       const timeA = a.last_update_time || 0
       const timeB = b.last_update_time || 0
@@ -558,7 +561,7 @@ onUnmounted(() => {
             <button @click="createSession"
               class="w-full flex items-center transition-all font-medium group shadow-sm overflow-hidden" :class="[
                 isSidebarCollapsed ? 'p-3 justify-center rounded-full' : 'py-3 px-4 gap-3 rounded-2xl border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-gray-600',
-                'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-white'
+                'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-white'
               ]" :title="isSidebarCollapsed ? 'New Chat' : ''">
               <div
                 class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white shadow-inner group-hover:scale-110 transition-transform shrink-0">
@@ -573,7 +576,13 @@ onUnmounted(() => {
           </div>
 
           <div v-if="!isSidebarCollapsed" class="flex-1 overflow-y-auto px-2 custom-scrollbar">
-            <div v-if="sessions.length === 0" class="text-gray-500 text-center py-4 text-sm">
+            <div v-if="isSessionsLoading" class="space-y-2 px-3 py-4">
+              <div v-for="i in 6" :key="i" class="animate-pulse p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-700/30">
+                <div class="h-3.5 bg-gray-200 dark:bg-gray-700 rounded-lg w-3/4 mb-2"></div>
+                <div class="h-2.5 bg-gray-100 dark:bg-gray-800 rounded-md w-1/2"></div>
+              </div>
+            </div>
+            <div v-else-if="sessions.length === 0" class="text-gray-500 text-center py-4 text-sm">
               No sessions yet
             </div>
             <ul v-else class="space-y-1 px-2">
