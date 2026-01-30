@@ -12,5 +12,5 @@ steps:
 images:
   - 'gcr.io/callbox-core/cbs-agent-ui'
 substitutions:
-  _VITE_API_URL: ''
-  _VITE_GOOGLE_CLIENT_ID: ''
+  _VITE_API_URL: 'https://cbs-agent-api-132501877056.us-central1.run.app'
+  _VITE_GOOGLE_CLIENT_ID: '132501877056-3bv1ehe0njpfl7pt5sms4deifn93gf0a.apps.googleusercontent.com'

@@ -697,7 +697,7 @@ onUnmounted(() => {
         <!-- Right Main: Chat -->
         <div class="flex-1 flex flex-col bg-white dark:bg-gray-900 relative min-w-0">
           <!-- Top Absolute Header with Fade -->
-          <div v-if="currentSessionId" class="absolute top-0 left-0 right-0 z-40 pointer-events-none">
+          <div v-if="user" class="absolute top-0 left-0 right-0 z-40 pointer-events-none">
             <!-- Smooth Gradient Overlay: Top (Solid) to Bottom (Transparent) -->
             <div
               class="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white via-white/80 to-transparent dark:from-gray-900 dark:via-gray-900/80 dark:to-transparent transition-colors duration-500">
@@ -796,11 +796,6 @@ onUnmounted(() => {
             @click="handleChatClick">
             <div v-if="!currentSessionId"
               class="h-full flex flex-col items-center justify-center text-center p-8 relative overflow-hidden">
-              <!-- Background Decoration -->
-              <div
-                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-blue-500/10 to-purple-500/10 rounded-full blur-3xl pointer-events-none">
-              </div>
-
               <div class="relative z-10 max-w-2xl">
                 <h1 class="text-6xl font-semibold mb-6">
                   <span
@@ -1176,8 +1171,19 @@ onUnmounted(() => {
               </div>
               <div
                 class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-gray-700/50">
-                <span class="text-sm font-medium text-gray-500">Author</span>
-                <span class="text-sm font-bold text-gray-900 dark:text-white">Advanced AI Lab</span>
+                <span class="text-sm font-medium text-gray-500 text-left">Author</span>
+                <span class="text-[13px] font-bold text-gray-900 dark:text-white text-right">
+                  Lucky John F. Faderon
+                  <span class="block text-[10px] text-gray-500 dark:text-gray-400 font-normal tracking-tight">Cloud & AI Solutions Architect</span>
+                </span>
+              </div>
+              <div
+                class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-gray-700/50">
+                <span class="text-sm font-medium text-gray-500 text-left">Department</span>
+                <span class="text-[13px] font-bold text-gray-900 dark:text-white text-right">
+                  Software Development
+                  <span class="block text-[10px] text-blue-500 dark:text-blue-400 font-normal">luckyf@callboxinc.com</span>
+                </span>
               </div>
               <div
                 class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-gray-700/50">
@@ -1190,13 +1196,6 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div
-            class="px-8 py-6 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700/50 flex justify-end">
-            <button @click="isHelpModalOpen = false"
-              class="px-6 py-2.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold hover:opacity-90 transition-opacity">
-              Close
-            </button>
-          </div>
         </div>
       </div>
     </Transition>
