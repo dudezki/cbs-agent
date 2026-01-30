@@ -101,5 +101,15 @@ The UI will be available at `http://localhost:5173`.
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
+## 👥 Authors & Ownership
+
+**Callbox, Inc.**  
+*Cloud & IA Solutions Architect*
+
+- **Lucky John Faderon**
+  - Email: [luckyf@callboxinc.com](mailto:luckyf@callboxinc.com)
+  - Cloud Email: [cloud@callboxinc.com](mailto:cloud@callboxinc.com)
+
 ## 📄 License
 Distributed under the MIT License. See `LICENSE` for more information.
+Copyright © 2026 Callbox, Inc.
