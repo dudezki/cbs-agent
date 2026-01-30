@@ -118,11 +118,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    class="grid grid-cols-1 md:grid-cols-2 h-screen w-full bg-white border-x border-gray-200 transition-colors duration-300">
-    <!-- Left Column: Branding & Marketing -->
+  <div class="grid grid-cols-1 md:grid-cols-2 h-screen w-full bg-white border-x border-gray-200">
+    <!-- Left Column: Branding & Marketing - ALWAYS DARK -->
     <div
-      class="hidden md:flex flex-col justify-between p-12 bg-gray-50 text-gray-900 relative overflow-hidden transition-colors duration-300">
+      class="hidden md:flex flex-col justify-between p-12 bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white relative overflow-hidden">
       <!-- Decorative background elements -->
       <div
         class="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none transition-all duration-1000"
@@ -132,9 +131,9 @@ onUnmounted(() => {
         :class="slides[currentSlide].bgClassBottom"></div>
 
       <div class="z-10 h-full flex flex-col justify-between">
-        <!-- Logo -->
+        <!-- Logo - Made Bigger -->
         <div class="flex items-center gap-3 mb-8">
-          <img src="/callbox-logo.svg" alt="Callbox" class="h-10" />
+          <img src="/callbox-logo-white.svg" alt="Callbox" class="h-16" />
         </div>
 
         <!-- Carousel Content -->
@@ -145,14 +144,14 @@ onUnmounted(() => {
             leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-4">
             <div :key="currentSlide" class="flex flex-col justify-center">
               <div>
-                <h1 class="text-5xl font-extrabold leading-tight mb-6 text-gray-900">
+                <h1 class="text-5xl font-extrabold leading-tight mb-6 text-white">
                   <span class="block mb-2" v-html="slides[currentSlide].title"></span>
                   <span :class="slides[currentSlide].highlightClass">{{ slides[currentSlide].highlight }}</span>
                 </h1>
               </div>
 
               <div>
-                <p class="text-lg text-gray-600 max-w-md leading-relaxed">
+                <p class="text-lg text-gray-400 max-w-md leading-relaxed">
                   {{ slides[currentSlide].description }}
                 </p>
               </div>
@@ -160,16 +159,16 @@ onUnmounted(() => {
               <!-- Feature Card -->
               <div class="mt-12">
                 <div
-                  class="bg-white/50 backdrop-blur-sm p-6 rounded-xl border border-gray-200 shadow-xl inline-block max-w-sm transform hover:scale-105 transition-transform duration-300">
+                  class="bg-white/5 backdrop-blur-sm p-6 rounded-xl border border-white/10 shadow-xl inline-block max-w-sm transform hover:scale-105 transition-transform duration-300">
                   <div class="flex items-start gap-4">
                     <div class="p-2 rounded-lg" :class="slides[currentSlide].iconBgClass">
                       <component :is="slides[currentSlide].icon" class="h-6 w-6"
                         :class="slides[currentSlide].iconColorClass" />
                     </div>
                     <div>
-                      <h3 class="font-semibold text-gray-900 mb-1">{{ slides[currentSlide].featureTitle
+                      <h3 class="font-semibold text-white mb-1">{{ slides[currentSlide].featureTitle
                       }}</h3>
-                      <p class="text-sm text-gray-500">{{ slides[currentSlide].featureDesc }}</p>
+                      <p class="text-sm text-gray-400">{{ slides[currentSlide].featureDesc }}</p>
                     </div>
                   </div>
                 </div>
@@ -182,14 +181,13 @@ onUnmounted(() => {
         <div class="mt-8 flex gap-3 z-10">
           <button v-for="(_, index) in slides" :key="index" @click="currentSlide = index"
             class="h-1 rounded-full transition-all duration-500 ease-out"
-            :class="currentSlide === index ? 'w-8 bg-amber-500' : 'w-2 bg-gray-300 hover:bg-gray-400'"></button>
+            :class="currentSlide === index ? 'w-8 bg-amber-500' : 'w-2 bg-gray-700 hover:bg-gray-600'"></button>
         </div>
       </div>
     </div>
 
-    <!-- Right Column: Login Form -->
-    <div
-      class="flex flex-col items-center justify-center p-8 bg-white text-gray-900 relative transition-colors duration-300">
+    <!-- Right Column: Login Form - ALWAYS LIGHT -->
+    <div class="flex flex-col items-center justify-center p-8 bg-white text-gray-900 relative">
       <div class="w-full max-w-sm">
         <div class="mb-10 text-center md:text-left">
           <h2 class="text-3xl font-bold mb-2">Welcome back</h2>
