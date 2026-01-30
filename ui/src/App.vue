@@ -898,10 +898,14 @@ onUnmounted(() => {
 
                 <!-- User Message -->
                 <div v-if="msg.role === 'user'" class="self-end max-w-[80%]">
+                  <div class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1.5 flex items-center gap-2 justify-end">
+                    <span class="text-blue-500 dark:text-blue-400">You</span>
+                    <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                    <span>{{ msg.timestamp }}</span>
+                  </div>
                   <div class="bg-blue-600 text-white px-5 py-3 rounded-2xl rounded-br-none shadow-lg">
                     {{ msg.text }}
                   </div>
-                  <div class="text-xs text-gray-500 mt-1 text-right">{{ msg.timestamp }}</div>
                 </div>
 
                 <!-- Model Message -->
@@ -913,15 +917,15 @@ onUnmounted(() => {
                         :alt="selectedAgent?.display_name || 'Callie'" class="w-full h-full object-cover" />
                     </div>
                     <div class="flex-1 min-w-0">
+                      <div class="text-[10px] uppercase tracking-widest font-bold mb-1.5 flex items-center gap-2">
+                        <span class="text-amber-500 dark:text-amber-400">{{ selectedAgent?.display_name?.split(' (')[0] || 'Callie' }}</span>
+                        <span v-if="msg.author" class="text-gray-400">({{ msg.author }})</span>
+                        <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                        <span class="text-gray-400">{{ msg.timestamp }}</span>
+                      </div>
                       <div
                         class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 px-5 py-3.5 rounded-2xl rounded-tl-none shadow-sm prose dark:prose-invert prose-sm max-w-none break-words prose-headings:text-gray-800 dark:prose-headings:text-gray-100 prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-strong:text-gray-900 dark:prose-strong:text-white prose-code:text-pink-600 dark:prose-code:text-pink-300 prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-700 prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-table:border-collapse prose-tr:border-b prose-tr:border-gray-200 dark:prose-tr:border-gray-700/50">
                         <div v-html="renderMarkdown(msg.text)"></div>
-                      </div>
-                      <div
-                        class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mt-1.5 flex items-center gap-2">
-                        <span v-if="msg.author" class="text-blue-500 dark:text-blue-400">{{ msg.author }}</span>
-                        <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
-                        <span>{{ msg.timestamp }}</span>
                       </div>
                     </div>
                   </div>
