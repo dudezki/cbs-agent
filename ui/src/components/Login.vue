@@ -3,9 +3,6 @@ import { ref, onMounted, onUnmounted, markRaw } from 'vue'
 import { googleTokenLogin } from 'vue3-google-login'
 import { SparklesIcon, ChartBarIcon, CpuChipIcon } from '@heroicons/vue/24/solid'
 
-const props = defineProps({
-  isDarkMode: Boolean
-})
 
 const emit = defineEmits(['login-success'])
 const errorMsg = ref('')

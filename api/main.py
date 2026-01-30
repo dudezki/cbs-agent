@@ -103,7 +103,7 @@ def create_app(
     # Create FastAPI app
     app = adk_web_server.get_fast_api_app(
         web_assets_dir=web_assets_dir,
-        allow_origins=["*"], # Allow all for development
+        allow_origins=["*", "https://cbs-agent-ui-132501877056.us-central1.run.app"], # Allow all for development + UI Prod
     )
 
     from fastapi import WebSocket, WebSocketDisconnect

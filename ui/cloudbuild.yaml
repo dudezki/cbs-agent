@@ -1,0 +1,16 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: 
+      - 'build'
+      - '-t'
+      - 'gcr.io/callbox-core/cbs-agent-ui'
+      - '--build-arg'
+      - 'VITE_API_URL=${_VITE_API_URL}'
+      - '--build-arg'
+      - 'VITE_GOOGLE_CLIENT_ID=${_VITE_GOOGLE_CLIENT_ID}'
+      - '.'
+images:
+  - 'gcr.io/callbox-core/cbs-agent-ui'
+substitutions:
+  _VITE_API_URL: ''
+  _VITE_GOOGLE_CLIENT_ID: ''
