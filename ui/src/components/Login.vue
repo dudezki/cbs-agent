@@ -101,84 +101,82 @@ const slides = [
     }
 ]
 
-onMounted(() => {
-    timer.value = setInterval(() => {
-        currentSlide.value = (currentSlide.value + 1) % slides.length
-    }, 2000)
-})
 
-onUnmounted(() => {
-    if (timer.value) clearInterval(timer.value)
-})
-</script>
+        onMounted(() => {
+            timer.value = setInterval(() => {
+                currentSlide.value = (currentSlide.value + 1) % slides.length
+            }, 10000)
+        })
 
-<template>
-  <div class="grid grid-cols-1 md:grid-cols-2 h-screen w-full bg-gray-900 border-x border-gray-700">
-    <!-- Left Column: Branding & Marketing -->
-    <div class="hidden md:flex flex-col justify-between p-12 bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white relative overflow-hidden">
-       <!-- Decorative background elements -->
-       <div class="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none transition-all duration-1000" :class="slides[currentSlide].bgClass"></div>
-       <div class="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none transition-all duration-1000" :class="slides[currentSlide].bgClassBottom"></div>
+        onUnmounted(() => {
+            if (timer.value) clearInterval(timer.value)
+        })
+        </script>
 
-       <div class="z-10 h-full flex flex-col justify-between">
-          <!-- Logo -->
-          <div class="flex items-center gap-3 mb-8">
-             <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center shadow-lg shadow-amber-900/20">
-               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
-                 <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-                 <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
-               </svg>
-             </div>
-             <span class="text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">Callbox Assistant</span>
-          </div>
-          
-          <!-- Carousel Content -->
-          <div class="relative flex-1 flex flex-col justify-center">
-                <div v-for="(slide, index) in slides" :key="index" v-if="currentSlide === index" class="absolute inset-0 flex flex-col justify-center">
-                    <div 
-                        v-motion
-                        :initial="{ opacity: 0, y: 20 }"
-                        :enter="{ opacity: 1, y: 0, transition: { duration: 600, type: 'spring', stiffness: 50, damping: 15 } }"
-                        :leave="{ opacity: 0, y: -20, transition: { duration: 400 } }"
-                    >
-                        <h1 class="text-5xl font-extrabold leading-tight mb-6 text-white">
-                            <span class="block mb-2" v-html="slide.title"></span>
-                            <span :class="slide.highlightClass">{{ slide.highlight }}</span>
-                        </h1>
-                    </div>
-                    
-                    <div 
-                        v-motion
-                        :initial="{ opacity: 0, y: 20 }"
-                        :enter="{ opacity: 1, y: 0, transition: { delay: 100, duration: 600, type: 'spring' } }"
-                        :leave="{ opacity: 0, y: -20, transition: { duration: 300 } }"
-                    >
-                        <p class="text-lg text-gray-400 max-w-md leading-relaxed">
-                            {{ slide.description }}
-                        </p>
-                    </div>
-                    
-                    <!-- Feature Card for specific slide -->
-                     <div class="mt-12"
-                        v-motion
-                        :initial="{ opacity: 0, scale: 0.9 }"
-                        :enter="{ opacity: 1, scale: 1, transition: { delay: 200, duration: 600, type: 'spring' } }"
-                        :leave="{ opacity: 0, scale: 0.95, transition: { duration: 300 } }"
-                     >
-                        <div class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50 shadow-xl inline-block max-w-sm">
-                            <div class="flex items-start gap-4">
-                            <div class="p-2 rounded-lg" :class="slide.iconBgClass">
-                                <component :is="slide.icon" class="h-6 w-6" :class="slide.iconColorClass" />
+        <template>
+          <div class="grid grid-cols-1 md:grid-cols-2 h-screen w-full bg-gray-900 border-x border-gray-700">
+            <!-- Left Column: Branding & Marketing -->
+            <div class="hidden md:flex flex-col justify-between p-12 bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white relative overflow-hidden">
+               <!-- Decorative background elements -->
+               <div class="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none transition-all duration-1000" :class="slides[currentSlide].bgClass"></div>
+               <div class="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none transition-all duration-1000" :class="slides[currentSlide].bgClassBottom"></div>
+        
+               <div class="z-10 h-full flex flex-col justify-between">
+                  <!-- Logo -->
+                  <div class="flex items-center gap-3 mb-8">
+                     <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center shadow-lg shadow-amber-900/20">
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                         <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
+                         <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
+                       </svg>
+                     </div>
+                     <span class="text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">Callbox Assistant</span>
+                  </div>
+                  
+                  <!-- Carousel Content -->
+                  <div class="relative flex-1 flex flex-col justify-center">
+                        <div v-for="(slide, index) in slides" :key="index" v-if="currentSlide === index" class="absolute inset-0 flex flex-col justify-center">
+                            <div 
+                                v-motion
+                                :initial="{ opacity: 1, y: 0 }"
+                                :enter="{ opacity: 1, y: 0, transition: { duration: 600, type: 'spring' } }"
+                            >
+                                <h1 class="text-5xl font-extrabold leading-tight mb-6 text-white">
+                                    <span class="block mb-2" v-html="slide.title"></span>
+                                    <span :class="slide.highlightClass">{{ slide.highlight }}</span>
+                                </h1>
                             </div>
-                            <div>
-                                <h3 class="font-semibold text-white mb-1">{{ slide.featureTitle }}</h3>
-                                <p class="text-sm text-gray-400">{{ slide.featureDesc }}</p>
+                            
+                            <div 
+                                v-motion
+                                :initial="{ opacity: 1, y: 0 }"
+                                :enter="{ opacity: 1, y: 0, transition: { delay: 100, duration: 600, type: 'spring' } }"
+                            >
+                                <p class="text-lg text-gray-400 max-w-md leading-relaxed">
+                                    {{ slide.description }}
+                                </p>
                             </div>
+                            
+                            <!-- Feature Card for specific slide -->
+                             <div class="mt-12"
+                                v-motion
+                                :initial="{ opacity: 1, scale: 1 }"
+                                :enter="{ opacity: 1, scale: 1, transition: { delay: 200, duration: 600, type: 'spring' } }"
+                             >
+                                <div class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50 shadow-xl inline-block max-w-sm">
+                                    <div class="flex items-start gap-4">
+                                    <div class="p-2 rounded-lg" :class="slide.iconBgClass">
+                                        <component :is="slide.icon" class="h-6 w-6" :class="slide.iconColorClass" />
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-white mb-1">{{ slide.featureTitle }}</h3>
+                                        <p class="text-sm text-gray-400">{{ slide.featureDesc }}</p>
+                                    </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-          </div>
+                  </div>
 
           <!-- Indicators -->
           <div class="mt-8 flex gap-3 z-10">

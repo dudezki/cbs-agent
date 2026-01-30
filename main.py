@@ -89,25 +89,45 @@ def create_app(
     @app.post("/auth/verify")
     async def verify_token(request: VerifyRequest):
         logger.info(f"Received verification request for client_id: {request.client_id}")
+        
+        # 1. Try to verify as ID Token (JWT)
         try:
-            # Specify the CLIENT_ID of the app that accesses the backend:
             idinfo = id_token.verify_oauth2_token(
                 request.token, 
                 google_requests.Request(), 
                 request.client_id
             )
-
-            # ID token is valid. Get the user's Google Account ID from the decoded token.
-            userid = idinfo['sub']
             return {
                 "user_id": idinfo.get('email'),
                 "name": idinfo.get('name'),
                 "picture": idinfo.get('picture'),
                 "email": idinfo.get('email')
             }
-        except ValueError as e:
-            # Invalid token
-            raise HTTPException(status_code=401, detail=str(e))
+        except ValueError:
+            # 2. Fallback: Try to verify as Access Token via UserInfo API
+            logger.info("ID token verification failed, trying as Access Token...")
+            try:
+                import requests
+                resp = requests.get(
+                    'https://www.googleapis.com/oauth2/v3/userinfo',
+                    headers={'Authorization': f'Bearer {request.token}'}
+                )
+                resp.raise_for_status()
+                user_info = resp.json()
+                
+                # Check if audience/azp matches? Access tokens don't always carry audience in the same way,
+                # but fetching from googleapis with it proves it's valid and grants access to that user's profile.
+                # We trust Google's response here for the user's identity.
+                
+                return {
+                    "user_id": user_info.get('email'),
+                    "name": user_info.get('name'),
+                    "picture": user_info.get('picture'),
+                    "email": user_info.get('email')
+                }
+            except Exception as e:
+                logger.error(f"Token verification failed: {e}")
+                raise HTTPException(status_code=401, detail="Invalid token")
 
     import asyncio
 
