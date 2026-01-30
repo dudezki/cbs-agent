@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick, watch, computed } from 'vue'
+import { ref, shallowRef, onMounted, nextTick, watch, computed } from 'vue'
 import MarkdownIt from 'markdown-it'
 import Login from './components/Login.vue'
 
@@ -10,7 +10,7 @@ const md = new MarkdownIt({
   breaks: true
 })
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8080'
 const WS_URL = API_URL.replace('http', 'ws')
 
 // Custom fence renderer for code blocks
@@ -91,7 +91,7 @@ const isAgentsModalOpen = ref(false)
 const appName = computed(() => selectedAgent.value ? selectedAgent.value.name : 'agent_sm')
 
 // User State (Auth)
-const user = ref<any>(null)
+const user = shallowRef<any>(null)
 const userId = computed(() => user.value ? user.value.email : 'default_user')
 
 // Check for existing session & agent
@@ -114,7 +114,7 @@ if (storedAgent) {
   }
 }
 
-const socket = ref<WebSocket | null>(null)
+const socket = shallowRef<WebSocket | null>(null)
 const sessions = ref<Session[]>([])
 const currentSessionId = ref<string | null>(null)
 const chatHistory = ref<Message[]>([])
@@ -407,13 +407,12 @@ const connectWebSocket = () => {
   let targetUrl = ''
 
   if (baseUrl) {
-    // Replace http/https with ws/wss and strip trailing slash
     const wsBase = baseUrl.replace(/^http/, 'ws').replace(/\/$/, '')
-    targetUrl = `${wsBase}/ui/ws`
+    targetUrl = `${wsBase}/api/ws`
   } else {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsUrl = `${protocol}//${window.location.host}/ui/ws`
-    targetUrl = import.meta.env.DEV ? 'ws://localhost:8080/ui/ws' : wsUrl
+    const wsUrl = `${protocol}//${window.location.host}/api/ws`
+    targetUrl = wsUrl
   }
 
   socket.value = new WebSocket(targetUrl)
@@ -1174,7 +1173,7 @@ onUnmounted(() => {
                 <img :src="isDarkMode ? '/callbox-logo-white.svg' : '/callbox-logo.svg'" class="h-8" />
               </div>
               <h3 class="text-xl font-bold text-gray-900 dark:text-white">Callie Agent Platform</h3>
-              <p class="text-sm text-gray-500 mt-1">Version 1.2.6 • Stable Release</p>
+              <p class="text-[10px] text-gray-500 font-mono opacity-50 select-none">v1.2.7 &bull; Direct Response Mode Enabled</p>
             </div>
 
             <div class="grid grid-cols-1 gap-4">

@@ -30,14 +30,14 @@ const verifyToken = async (response: any) => {
     try {
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
       console.log("Using Google Client ID:", clientId)
-      let baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+      let baseUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '' : 'http://127.0.0.1:8080')
       // Defensive check: if baseUrl contains spaces (pollution from other build args), take first part
       if (baseUrl.includes(' ')) {
         baseUrl = baseUrl.split(' ')[0]
       }
       // Ensure trailingslash-free base
       baseUrl = baseUrl.replace(/\/$/, '')
-      const url = `${baseUrl}/auth/verify`
+      const url = `${baseUrl}/api/auth/verify`
       console.log("Verifying token at:", url)
       const verifyRes = await fetch(url, {
         method: 'POST',

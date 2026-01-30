@@ -172,7 +172,7 @@ def create_app(
     async def list_agents():
         return get_agents()
 
-    @app.post("/auth/verify")
+    @app.post("/api/auth/verify")
     async def verify_token(request: VerifyRequest):
         logger.info(f"Received verification request for client_id: {request.client_id}")
         
@@ -217,7 +217,7 @@ def create_app(
 
     import asyncio
 
-    @app.websocket("/ui/ws")
+    @app.websocket("/api/ws")
     async def ui_websocket(websocket: WebSocket):
         await websocket.accept()
         ws_lock = asyncio.Lock()
