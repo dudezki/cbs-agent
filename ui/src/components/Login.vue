@@ -135,48 +135,45 @@ const slides = [
                   
                   <!-- Carousel Content -->
                   <div class="relative flex-1 flex flex-col justify-center">
-                        <div v-for="(slide, index) in slides" :key="index" v-if="currentSlide === index" class="absolute inset-0 flex flex-col justify-center">
-                            <div 
-                                v-motion
-                                :initial="{ opacity: 1, y: 0 }"
-                                :enter="{ opacity: 1, y: 0, transition: { duration: 600, type: 'spring' } }"
-                            >
-                                <h1 class="text-5xl font-extrabold leading-tight mb-6 text-white">
-                                    <span class="block mb-2" v-html="slide.title"></span>
-                                    <span :class="slide.highlightClass">{{ slide.highlight }}</span>
-                                </h1>
+             <transition 
+                enter-active-class="transition-all duration-700 ease-out"
+                enter-from-class="opacity-0 translate-y-4"
+                enter-to-class="opacity-100 translate-y-0"
+                leave-active-class="transition-all duration-500 ease-in absolute inset-0"
+                leave-from-class="opacity-100 translate-y-0"
+                leave-to-class="opacity-0 -translate-y-4"
+             >
+                <div :key="currentSlide" class="flex flex-col justify-center">
+                    <div>
+                        <h1 class="text-5xl font-extrabold leading-tight mb-6 text-white">
+                            <span class="block mb-2" v-html="slides[currentSlide].title"></span>
+                            <span :class="slides[currentSlide].highlightClass">{{ slides[currentSlide].highlight }}</span>
+                        </h1>
+                    </div>
+                    
+                    <div>
+                        <p class="text-lg text-gray-400 max-w-md leading-relaxed">
+                            {{ slides[currentSlide].description }}
+                        </p>
+                    </div>
+                    
+                    <!-- Feature Card -->
+                     <div class="mt-12">
+                        <div class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50 shadow-xl inline-block max-w-sm transform hover:scale-105 transition-transform duration-300">
+                            <div class="flex items-start gap-4">
+                            <div class="p-2 rounded-lg" :class="slides[currentSlide].iconBgClass">
+                                <component :is="slides[currentSlide].icon" class="h-6 w-6" :class="slides[currentSlide].iconColorClass" />
                             </div>
-                            
-                            <div 
-                                v-motion
-                                :initial="{ opacity: 1, y: 0 }"
-                                :enter="{ opacity: 1, y: 0, transition: { delay: 100, duration: 600, type: 'spring' } }"
-                            >
-                                <p class="text-lg text-gray-400 max-w-md leading-relaxed">
-                                    {{ slide.description }}
-                                </p>
+                            <div>
+                                <h3 class="font-semibold text-white mb-1">{{ slides[currentSlide].featureTitle }}</h3>
+                                <p class="text-sm text-gray-400">{{ slides[currentSlide].featureDesc }}</p>
                             </div>
-                            
-                            <!-- Feature Card for specific slide -->
-                             <div class="mt-12"
-                                v-motion
-                                :initial="{ opacity: 1, scale: 1 }"
-                                :enter="{ opacity: 1, scale: 1, transition: { delay: 200, duration: 600, type: 'spring' } }"
-                             >
-                                <div class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50 shadow-xl inline-block max-w-sm">
-                                    <div class="flex items-start gap-4">
-                                    <div class="p-2 rounded-lg" :class="slide.iconBgClass">
-                                        <component :is="slide.icon" class="h-6 w-6" :class="slide.iconColorClass" />
-                                    </div>
-                                    <div>
-                                        <h3 class="font-semibold text-white mb-1">{{ slide.featureTitle }}</h3>
-                                        <p class="text-sm text-gray-400">{{ slide.featureDesc }}</p>
-                                    </div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
-                  </div>
+                    </div>
+                </div>
+             </transition>
+          </div>
 
           <!-- Indicators -->
           <div class="mt-8 flex gap-3 z-10">
