@@ -70,18 +70,43 @@ interface AgentEvent {
   }
 }
 
+// Agent State
+interface Agent {
+  id: string
+  name: string
+  display_name: string
+  description: string
+  personality: string
+  steps: string
+  avatar: string
+  suggestions: string
+}
+
+const agents = ref<Agent[]>([])
+const selectedAgent = ref<Agent | null>(null)
+const isAgentsModalOpen = ref(false)
+const appName = computed(() => selectedAgent.value ? selectedAgent.value.name : 'agent_sm')
+
 // User State (Auth)
 const user = ref<any>(null)
-const appName = 'agent_sm'
 const userId = computed(() => user.value ? user.value.email : 'default_user')
 
-// Check for existing session
+// Check for existing session & agent
 const storedUser = localStorage.getItem('cbx_user')
 if (storedUser) {
   try {
     user.value = JSON.parse(storedUser)
   } catch (e) {
     console.error("Failed to parse stored user", e)
+  }
+}
+
+const storedAgent = localStorage.getItem('cbx_agent')
+if (storedAgent) {
+  try {
+    selectedAgent.value = JSON.parse(storedAgent)
+  } catch (e) {
+    console.error("Failed to parse stored agent", e)
   }
 }
 
@@ -197,10 +222,45 @@ const selectSession = (sessionId: string) => {
   if (socket.value && socket.value.readyState === WebSocket.OPEN) {
     socket.value.send(JSON.stringify({
       type: 'load_history',
-      app_name: appName,
+      app_name: appName.value,
       user_id: userId.value,
       session_id: sessionId
     }))
+  }
+}
+
+const fetchAgents = async () => {
+  try {
+    const resp = await fetch('/api/agents')
+    if (resp.ok) {
+      agents.value = await resp.json()
+      // Default to first agent if none selected or if selected agent not in list anymore
+      if (!selectedAgent.value && agents.value.length > 0) {
+        selectAgent(agents.value[0])
+      }
+    }
+  } catch (e) {
+    console.error("Failed to fetch agents", e)
+  }
+}
+
+const selectAgent = (agent: Agent) => {
+  if (selectedAgent.value?.name === agent.name) {
+    return
+  }
+
+  selectedAgent.value = agent
+  localStorage.setItem('cbx_agent', JSON.stringify(agent))
+
+  // Reset chat state for new agent
+  currentSessionId.value = null
+  chatHistory.value = []
+  agentThinking.value = []
+  processedEventIds.value.clear()
+
+  // Reload sessions for new agent
+  if (isConnected.value) {
+    listSessions()
   }
 }
 
@@ -208,7 +268,7 @@ const listSessions = () => {
   if (!socket.value) return
   socket.value.send(JSON.stringify({
     type: 'list_sessions',
-    app_name: appName,
+    app_name: appName.value,
     user_id: userId.value
   }))
 }
@@ -230,7 +290,7 @@ const deleteSession = (sessionId: string) => {
   if (confirm('Are you sure you want to delete this session?')) {
     socket.value.send(JSON.stringify({
       type: 'delete_session',
-      app_name: appName,
+      app_name: appName.value,
       user_id: userId.value,
       session_id: sessionId
     }))
@@ -257,7 +317,7 @@ const sendMessage = () => {
 
   socket.value.send(JSON.stringify({
     type: 'chat',
-    app_name: appName,
+    app_name: appName.value,
     user_id: userId.value,
     session_id: sessionIdToSend,
     new_message: { role: 'user', parts: [{ text: text }] }
@@ -371,7 +431,10 @@ const handleLogin = (userData: any) => {
 
 const handleLogout = () => {
   user.value = null
+  selectedAgent.value = null
   localStorage.removeItem('cbx_user')
+  localStorage.removeItem('cbx_agent')
+  localStorage.removeItem('theme')
   disconnectWebSocket()
 }
 
@@ -402,26 +465,36 @@ watch(chatHistory, () => {
 }, { deep: true })
 
 const isUserMenuOpen = ref(false)
+const isSettingsMenuOpen = ref(false)
+const isHelpModalOpen = ref(false)
 const isSidebarCollapsed = ref(false)
 
 const toggleUserMenu = () => {
   isUserMenuOpen.value = !isUserMenuOpen.value
 }
 
+const toggleSettingsMenu = () => {
+  isSettingsMenuOpen.value = !isSettingsMenuOpen.value
+}
+
 const toggleSidebar = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value
 }
 
-// Close user menu when clicking outside
-const closeUserMenu = (e: MouseEvent) => {
+// Close menus when clicking outside
+const closeMenus = (e: MouseEvent) => {
   const target = e.target as HTMLElement
   if (!target.closest('.user-menu-container')) {
     isUserMenuOpen.value = false
   }
+  if (!target.closest('.settings-menu-container')) {
+    isSettingsMenuOpen.value = false
+  }
 }
 
 onMounted(() => {
-  document.addEventListener('click', closeUserMenu)
+  document.addEventListener('click', closeMenus)
+  fetchAgents()
   if (user.value) {
     connectWebSocket()
   }
@@ -430,7 +503,7 @@ onMounted(() => {
 // Clean up listener
 import { onUnmounted } from 'vue'
 onUnmounted(() => {
-  document.removeEventListener('click', closeUserMenu)
+  document.removeEventListener('click', closeMenus)
 })
 </script>
 
@@ -442,8 +515,8 @@ onUnmounted(() => {
       <div v-else class="flex h-full w-full">
         <!-- Left Sidebar: Sessions -->
         <div
-          class="bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col flex-shrink-0 transition-all duration-300 overflow-hidden"
-          :class="isSidebarCollapsed ? 'w-20' : 'w-64'">
+          class="bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col flex-shrink-0 transition-all duration-300"
+          :class="isSidebarCollapsed ? 'w-20 overflow-hidden' : 'w-64'">
           <div class="p-6 flex items-center" :class="isSidebarCollapsed ? 'justify-center' : 'justify-between'">
             <button @click="toggleSidebar"
               class="p-2 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors"
@@ -511,18 +584,74 @@ onUnmounted(() => {
 
           <!-- Sidebar Footer -->
           <div v-if="!isSidebarCollapsed" class="mt-auto p-4 border-t border-gray-200 dark:border-gray-700">
-            <button
-              class="w-full text-left py-2.5 px-4 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-3 group">
-              <svg xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none"
-                viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span class="font-medium">Settings & Help</span>
-            </button>
+            <div class="relative settings-menu-container">
+              <!-- Dropup Menu -->
+              <Transition name="dropdown">
+                <div v-if="isSettingsMenuOpen"
+                  class="absolute bottom-full left-0 mb-3 w-64 bg-white dark:bg-[#28292c] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 transform origin-bottom transition-all">
+                  <div class="p-2 space-y-1">
+                    <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-700/50 mb-1">
+                      <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Configuration</span>
+                    </div>
+                    <button @click="isAgentsModalOpen = true; isSettingsMenuOpen = false"
+                      class="w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group">
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-500">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                        </div>
+                        <span class="font-medium">Switch Agent</span>
+                      </div>
+                      <svg xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+
+                    <button @click="isHelpModalOpen = true; isSettingsMenuOpen = false"
+                      class="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group">
+                      <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                          stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <span class="font-medium">Help Center</span>
+                    </button>
+                  </div>
+                </div>
+              </Transition>
+
+              <button @click="toggleSettingsMenu"
+                class="w-full text-left py-2.5 px-4 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all flex items-center gap-3 group relative overflow-hidden"
+                :class="isSettingsMenuOpen ? 'bg-gray-100 dark:bg-gray-800 ring-2 ring-blue-500/20' : ''">
+                <div
+                  class="h-6 w-6 rounded-lg overflow-hidden shrink-0 border border-gray-200 dark:border-gray-700 shadow-sm transition-transform group-hover:scale-110">
+                  <img v-if="selectedAgent?.avatar" :src="selectedAgent.avatar" class="w-full h-full object-cover" />
+                  <svg v-else xmlns="http://www.w3.org/2000/svg"
+                    class="h-full w-full p-1 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div class="flex flex-col min-w-0">
+                  <span class="font-medium transition-colors"
+                    :class="isSettingsMenuOpen ? 'text-blue-600 dark:text-blue-400' : ''">Settings & Help</span>
+                  <span v-if="selectedAgent"
+                    class="text-[10px] text-purple-500 dark:text-purple-400 font-black tracking-[0.1em] uppercase leading-tight mt-1 whitespace-normal break-words">{{
+                      selectedAgent.display_name }}</span>
+                </div>
+              </button>
+            </div>
 
             <div
               class="mt-3 flex items-center justify-between px-4 py-2.5 bg-gray-100/50 dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-700/50">
@@ -693,26 +822,24 @@ onUnmounted(() => {
                   <p class="text-xl text-gray-400 font-light">I'm ready whenever you are.</p>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 w-full max-w-2xl px-4">
-                  <button @click="userInput = 'Analyze the sales performance in Q4'; sendMessage()"
-                    class="text-left p-4 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all hover:-translate-y-1 group">
-                    <h3 class="text-blue-300 font-medium mb-1 group-hover:text-blue-200">Analyze Sales</h3>
-                    <p class="text-sm text-gray-500 line-clamp-2">Review performance metrics for the last quarter</p>
-                  </button>
-                  <button @click="userInput = 'Draft a marketing report regarding our latest campaign'; sendMessage()"
-                    class="text-left p-4 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all hover:-translate-y-1 group">
-                    <h3 class="text-purple-300 font-medium mb-1 group-hover:text-purple-200">Draft Report</h3>
-                    <p class="text-sm text-gray-500 line-clamp-2">Create a comprehensive marketing summary</p>
-                  </button>
-                  <button @click="userInput = 'Check the CRM data for inconsistencies'; sendMessage()"
-                    class="text-left p-4 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all hover:-translate-y-1 group">
-                    <h3 class="text-pink-300 font-medium mb-1 group-hover:text-pink-200">Audit Data</h3>
-                    <p class="text-sm text-gray-500 line-clamp-2">Scan datasets for potential errors or gaps</p>
-                  </button>
-                  <button @click="userInput = 'Help me plan the strategy for next month'; sendMessage()"
-                    class="text-left p-4 bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600 rounded-xl transition-all hover:-translate-y-1 group">
-                    <h3 class="text-yellow-300 font-medium mb-1 group-hover:text-yellow-200">Plan Strategy</h3>
-                    <p class="text-sm text-gray-500 line-clamp-2">Outline key objectives and action items</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl px-4">
+                  <button v-for="(suggestion, idx) in selectedAgent?.suggestions.split(';')" :key="idx"
+                    @click="userInput = suggestion; sendMessage()"
+                    class="text-left p-6 bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700/50 hover:border-blue-500/50 rounded-2xl transition-all hover:-translate-y-1 group shadow-sm hover:shadow-xl hover:shadow-blue-500/10 active:scale-95">
+                    <div
+                      class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 mb-4 group-hover:scale-110 transition-transform">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <h3
+                      class="text-gray-900 dark:text-white font-bold mb-2 group-hover:text-blue-500 transition-colors">
+                      {{ suggestion.split(' ').slice(0, 2).join(' ') }}
+                    </h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{{ suggestion }}
+                    </p>
                   </button>
                 </div>
               </div>
@@ -731,8 +858,9 @@ onUnmounted(() => {
                 <div v-else-if="msg.role === 'model'" class="self-start max-w-[80%]">
                   <div class="flex items-start gap-4">
                     <div
-                      class="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center shadow-lg border-2 border-white dark:border-gray-800 transition-transform hover:scale-110">
-                      <img src="/cally-avatar.png" alt="Cally" class="w-full h-full object-cover" />
+                      class="w-14 h-14 overflow-hidden flex-shrink-0 flex items-center justify-center transition-transform hover:scale-110">
+                      <img :src="selectedAgent?.avatar || '/cally-avatar.png'"
+                        :alt="selectedAgent?.display_name || 'Cally'" class="w-full h-full object-cover" />
                     </div>
                     <div class="flex-1 min-w-0">
                       <div
@@ -762,20 +890,22 @@ onUnmounted(() => {
                 class="max-w-5xl mx-auto w-full mt-4 mb-8 transition-all duration-500 ease-in-out">
                 <!-- ... existing thinking UI ... -->
                 <div v-if="!isComplexWorkflow"
-                  class="flex items-center gap-3 px-4 py-2 bg-gray-800/30 rounded-full w-fit mx-auto border border-gray-700/30 backdrop-blur-sm animate-pulse">
+                  class="flex items-center gap-3 px-4 py-2 bg-blue-50/80 dark:bg-gray-800/30 rounded-full w-fit mx-auto border border-blue-100 dark:border-gray-700/30 backdrop-blur-sm animate-pulse shadow-sm">
                   <div class="relative flex h-4 w-4">
                     <span
                       class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-4 w-4 bg-blue-500"></span>
                   </div>
-                  <span class="text-sm text-gray-400 font-medium">Cally is thinking...</span>
+                  <span class="text-sm text-gray-600 dark:text-gray-400 font-medium">{{
+                    selectedAgent?.display_name.split(' (')[0] ||
+                    'Cally' }} is thinking...</span>
                 </div>
 
                 <details v-else
-                  class="group bg-gray-800/50 border border-gray-700/50 rounded-lg overflow-hidden transition-all duration-300 open:bg-gray-800/80"
+                  class="group bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-2xl overflow-hidden transition-all duration-300 open:bg-white dark:open:bg-gray-800/80 shadow-sm"
                   open>
                   <summary
-                    class="flex items-center gap-3 px-4 py-3 cursor-pointer select-none text-sm text-gray-400 hover:text-gray-200 transition-colors list-none">
+                    class="flex items-center gap-3 px-6 py-4 cursor-pointer select-none text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors list-none">
                     <div v-if="isThinking" class="relative flex h-3 w-3">
                       <span
                         class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
@@ -788,7 +918,7 @@ onUnmounted(() => {
                       {{ isThinking ? 'Workflow Active: Generating Report...' : 'Workflow Complete' }}
                     </span>
                     <span
-                      class="ml-auto text-xs bg-gray-700 px-2 py-0.5 rounded-full text-gray-400 group-open:text-gray-300">
+                      class="ml-auto text-[10px] font-bold uppercase tracking-wider bg-gray-200 dark:bg-gray-700 px-2.5 py-1 rounded-full text-gray-500 dark:text-gray-400 group-open:text-gray-700 dark:group-open:text-gray-300 transition-colors">
                       {{ agentThinking.length }} steps
                     </span>
                     <svg class="w-4 h-4 transition-transform group-open:rotate-180 text-gray-500" fill="none"
@@ -797,10 +927,10 @@ onUnmounted(() => {
                     </svg>
                   </summary>
                   <div
-                    class="p-4 border-t border-gray-700/50 bg-gray-900/50 font-mono text-xs text-gray-400 overflow-x-auto max-h-80 custom-scrollbar">
+                    class="p-6 border-t border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-900/50 font-mono text-[11px] text-gray-500 dark:text-gray-400 overflow-x-auto max-h-80 custom-scrollbar">
                     <div v-for="(event, idx) in agentThinking" :key="idx"
-                      class="mb-2 last:mb-0 hover:bg-gray-800/50 p-2 rounded transition-colors border-l-2"
-                      :class="['content_creator', 'auditor', 'critic', 'refiner'].includes(event.author || '') ? 'border-purple-500/50 bg-purple-900/10' : 'border-gray-700'">
+                      class="mb-3 last:mb-0 hover:bg-white dark:hover:bg-gray-800/50 p-4 rounded-xl transition-all border-l-4 shadow-sm"
+                      :class="['content_creator', 'auditor', 'critic', 'refiner'].includes(event.author || '') ? 'border-purple-500/50 bg-purple-50/50 dark:bg-purple-900/10' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-transparent'">
                       <div class="flex gap-2 mb-1 justify-between">
                         <div class="flex gap-2">
                           <span class="font-bold uppercase tracking-wider text-[10px]" :class="{
@@ -811,12 +941,14 @@ onUnmounted(() => {
                           }">
                             {{ event.author }}
                           </span>
-                          <span class="text-gray-600">{{ event.timestamp ? new Date(event.timestamp *
-                            1000).toLocaleTimeString().split(' ')[0] : '' }}</span>
+                          <span class="text-gray-400 dark:text-gray-600 tracking-tighter">{{ event.timestamp ? new
+                            Date(event.timestamp *
+                              1000).toLocaleTimeString().split(' ')[0] : '' }}</span>
                         </div>
                       </div>
                       <div v-if="event.actions" class="pl-2">
-                        <div v-if="event.actions.thought" class="text-gray-300 mb-1 italic">
+                        <div v-if="event.actions.thought"
+                          class="text-gray-600 dark:text-gray-300 mb-1 italic leading-relaxed">
                           "{{ event.actions.thought }}"
                         </div>
                         <div v-if="event.actions.tool_use" class="text-emerald-400/80 font-medium">
@@ -887,6 +1019,160 @@ onUnmounted(() => {
                 Cally’s responses depend on the request and available data. Please verify important information.
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Agents Modal -->
+    <Transition name="page-fade">
+      <div v-if="isAgentsModalOpen"
+        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-950/60 backdrop-blur-md">
+        <div
+          class="bg-white dark:bg-gray-800 w-full max-w-6xl rounded-[2.5rem] shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col max-h-[90vh]">
+          <div
+            class="px-8 pt-8 pb-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700/50">
+            <div>
+              <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Choose an Assistant</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Select the specialized Cally that fits your task.
+              </p>
+            </div>
+            <button @click="isAgentsModalOpen = false"
+              class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <button v-for="agent in agents" :key="agent.id" @click="selectAgent(agent)"
+                class="w-full text-left p-8 rounded-[2.5rem] border-2 transition-all flex flex-col gap-6 group relative overflow-hidden"
+                :class="selectedAgent?.id === agent.id
+                  ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-500/10'
+                  : 'border-gray-100 dark:border-gray-700/50 hover:border-gray-300 dark:hover:border-gray-600 bg-gray-50/50 dark:bg-gray-800/50'">
+
+                <div class="flex items-start gap-5 w-full">
+                  <div
+                    class="w-16 h-16 rounded-2xl flex-shrink-0 flex items-center justify-center transition-transform group-hover:scale-110 overflow-hidden shadow-md"
+                    :class="selectedAgent?.id === agent.id ? ' ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-800' : 'bg-gray-200 dark:bg-gray-700'">
+                    <img :src="agent.avatar" class="w-full h-full object-cover" />
+                  </div>
+
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between mb-2">
+                      <h3 class="font-bold text-2xl dark:text-white"
+                        :class="selectedAgent?.id === agent.id ? 'text-blue-600' : 'text-gray-900'">{{
+                          agent.display_name }}
+                      </h3>
+                    </div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{{ agent.description }}</p>
+                  </div>
+                </div>
+
+                <div v-if="selectedAgent?.id === agent.id"
+                  class="absolute top-0 right-0 w-24 h-24 pointer-events-none overflow-hidden">
+                  <div
+                    class="absolute top-4 -right-10 w-32 bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.2em] py-1.5 shadow-xl transform rotate-45 text-center">
+                    Active
+                  </div>
+                </div>
+
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
+                  <div>
+                    <span
+                      class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Personality</span>
+                    <p class="text-xs text-gray-600 dark:text-gray-300 italic">"{{ agent.personality }}"</p>
+                  </div>
+                  <div>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Workflow
+                      Path</span>
+                    <div class="flex flex-wrap gap-1">
+                      <span v-for="(step, idx) in agent.steps.split(' -> ')" :key="idx"
+                        class="text-[9px] px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-medium">
+                        {{ step }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div
+            class="px-8 py-6 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700/50 flex justify-end">
+            <button @click="isAgentsModalOpen = false"
+              class="px-6 py-2.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold hover:opacity-90 transition-opacity">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Help Modal -->
+    <Transition name="page-fade">
+      <div v-if="isHelpModalOpen"
+        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-950/60 backdrop-blur-md">
+        <div
+          class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
+          <div
+            class="px-8 pt-8 pb-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700/50">
+            <div>
+              <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Help Center</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Application Information & Support</p>
+            </div>
+            <button @click="isHelpModalOpen = false"
+              class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="p-8 space-y-6">
+            <div
+              class="flex flex-col items-center text-center p-6 bg-blue-50 dark:bg-blue-500/5 rounded-3xl border border-blue-100 dark:border-blue-500/10">
+              <div
+                class="w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center shadow-lg mb-4">
+                <img :src="isDarkMode ? '/callbox-logo-white.svg' : '/callbox-logo.svg'" class="h-8" />
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 dark:text-white">Cally Agent Platform</h3>
+              <p class="text-sm text-gray-500 mt-1">Version 1.2.0 • Stable Release</p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4">
+              <div
+                class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-gray-700/50">
+                <span class="text-sm font-medium text-gray-500">Ownership</span>
+                <span class="text-sm font-bold text-gray-900 dark:text-white">Callbox Inc.</span>
+              </div>
+              <div
+                class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-gray-700/50">
+                <span class="text-sm font-medium text-gray-500">Author</span>
+                <span class="text-sm font-bold text-gray-900 dark:text-white">Advanced AI Lab</span>
+              </div>
+              <div
+                class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-gray-700/50">
+                <span class="text-sm font-medium text-gray-500">Status</span>
+                <div class="flex items-center gap-1.5 text-xs font-bold text-green-500 uppercase tracking-widest">
+                  <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                  System Online
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="px-8 py-6 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700/50 flex justify-end">
+            <button @click="isHelpModalOpen = false"
+              class="px-6 py-2.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold hover:opacity-90 transition-opacity">
+              Close
+            </button>
           </div>
         </div>
       </div>

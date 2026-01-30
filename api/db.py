@@ -1,0 +1,71 @@
+import sqlite3
+import uuid
+import os
+
+DB_PATH = os.path.join(os.path.dirname(__file__), "agents.db")
+
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("DROP TABLE IF EXISTS agents") # Reset for new schema
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS agents (
+            id TEXT PRIMARY KEY,
+            name TEXT UNIQUE NOT NULL,
+            display_name TEXT NOT NULL,
+            description TEXT,
+            personality TEXT,
+            steps TEXT,
+            avatar TEXT,
+            suggestions TEXT
+        )
+    """)
+    
+    initial_agents = [
+        (
+            str(uuid.uuid4()), 
+            "agent_sm", 
+            "Cally (Strategic Marketing)", 
+            "Specializes in marketing reports, sales analysis, and strategic data insights.",
+            "Analytical, professional, and results-oriented. Focused on growth and ROI.",
+            "Data Extraction -> Compliance Audit -> Strategic Critique -> Executive Report",
+            "/cally-avatar-sm.png",
+            "Generate a quarterly sales report;Audit my latest CRM campaign;Analyze marketing ROI for last month"
+        ),
+        (
+            str(uuid.uuid4()), 
+            "agent_cs", 
+            "Cally (Client Services)", 
+            "Focused on client relationship management, service delivery metrics, and satisfaction analysis.",
+            "Attentive, professional, and proactive. Prioritizes client success and high-quality service delivery.",
+            "Account Health Check -> Success Planning -> Service Optimization",
+            "/cally-avatar-cs.png",
+            "Perform an account health check;Draft a client success plan;Analyze service delivery metrics"
+        ),
+        (
+            str(uuid.uuid4()), 
+            "agent_admin", 
+            "Cally (Administrative)", 
+            "Handles internal administrative tasks, scheduling logic, and resource management.",
+            "Precise, organized, and reliable. Values efficiency and structural integrity.",
+            "Resource Auditing -> Schedule Optimization -> Logistics Planning",
+            "/cally-avatar-admin.png",
+            "Audit internal resource usage;Optimize my team's schedule;Create a logistics planning draft"
+        )
+    ]
+    cursor.executemany("INSERT INTO agents (id, name, display_name, description, personality, steps, avatar, suggestions) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", initial_agents)
+    conn.commit()
+    conn.close()
+
+def get_agents():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM agents")
+    agents = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return agents
+
+if __name__ == "__main__":
+    init_db()
+    print("Database initialized and populated.")

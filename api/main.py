@@ -115,10 +115,18 @@ def create_app(
     from google.oauth2 import id_token
     from google.auth.transport import requests as google_requests
     from pydantic import BaseModel
+    from db import init_db, get_agents
+
+    # Initialize agents DB
+    init_db()
 
     class VerifyRequest(BaseModel):
         token: str
         client_id: str
+
+    @app.get("/api/agents")
+    async def list_agents():
+        return get_agents()
 
     @app.post("/auth/verify")
     async def verify_token(request: VerifyRequest):

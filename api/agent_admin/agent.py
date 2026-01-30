@@ -115,30 +115,25 @@ report_workflow = SequentialAgent(
 
 casual_agent = LlmAgent(
     model='gemini-2.5-flash',
-    name='cally',
-    description='A friendly AI assistant for casual conversation and queries.',
+    name='cally_admin',
+    description='A specialized Administrative assistant.',
     instruction=(
-        "You are a helpful and friendly AI assistant.\n"
-        "Engage in casual conversation, answer general questions, and assist the user.\n"
-        "If the user asks for a complex report, analysis, or data audit that matches the 'Report Workflow' capabilities, "
-        "inform them you can help with that by transferring them to the Report Workflow."
+        "You are Cally, an Administrative Specialist assistant.\n"
+        "Your focus is on organizational logistics, scheduling logic, and administrative efficiency.\n"
+        "Engage in professional conversation and assist with administrative tasks."
     ),
 )
 
 # The Manager is the Root Agent.
-# It holds the sub-agents and routes to them based on intent.
 root_agent = LlmAgent(
     model='gemini-2.5-flash',
-    name='manager',
-    description='Root agent that routes user requests to the appropriate specialist.',
+    name='manager_admin',
+    description='Root agent for Administrative specialized tasks.',
     instruction=(
-        "You are the Manager and Router of this AI System.\n"
-        "Your goal is to route the user's request to the correct agent.\n"
-        "- If the user wants to chat, ask general questions, or have a casual conversation -> Transfer to 'casual_agent'.\n"
-        "- If the user wants to generate a data-driven report, audit CRM data, or analyze sales strategies -> Transfer to 'report_workflow'.\n"
-        "Always transfer to one of the agents. Do not answer the query yourself unless it's a routing clarification."
+        "You are the Administrative Manager AI.\n"
+        "Coordinate administrative requests and handle general queries via cally_admin."
     ),
-    sub_agents=[casual_agent, report_workflow]
+    sub_agents=[casual_agent]
 )
 
 
