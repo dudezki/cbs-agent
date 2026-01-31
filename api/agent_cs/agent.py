@@ -25,6 +25,13 @@ bq_config = BigQueryToolConfig(
 )
 bq_toolset = BigQueryToolset(bigquery_tool_config=bq_config)
 
+# Draft Document Review
+DRAFT_DOCUMENT_REVIEW = """"""
+DRAFT_DOCUMENT_AUDIT = """"""
+DRAFT_DOCUMENT_CRITIQUE = """"""
+DRAFT_DOCUMENT_REVISION = """"""
+DRAFT_DOCUMENT_FINAL = """"""
+
 content_creator = LlmAgent(
     model='gemini-2.5-flash',
     name='writer',
@@ -66,6 +73,7 @@ content_creator = LlmAgent(
         "Output the raw draft report. DO NOT use introductory phrases like 'As a Senior Data Analyst' or 'As a reporter'. Start directly with the content."
     ),
     tools=[bq_toolset],
+    output_key="draft_document_review"
 )
 
 auditor = LlmAgent(
@@ -74,14 +82,29 @@ auditor = LlmAgent(
     description='Data Integrity & Compliance Auditor who verifies data usage and standards.',
     instruction=(
         "You are a Data Integrity and Compliance Auditor.\n"
-        "Input: Draft report from the Content Creator.\n"
-        "Task: AUDIT the draft for accuracy and compliance.\n"
+        "\n"
+        "INPUT DATA:\n"
+        "{draft_document_review}\n"
+        "\n"
+        "TASK: AUDIT the above draft for accuracy and compliance.\n"
         "- Verify that business data sources were properly utilized and cited.\n"
         "- Flag any vague claims that lack data backing (potential hallucinations).\n"
         "- Ensure the tone is professional, objective, and free of aggressive language.\n"
         "- Confirm that the report uses business-friendly terminology and avoids technical jargon (no schema/table names exposed).\n"
-        "Output: The original draft text followed by your 'Audit Findings'. DO NOT use introductory phrases like 'As an auditor'. Respond directly."
+        "\n"
+        "CRITICAL OUTPUT FORMAT:\n"
+        "You MUST output the original content you received, followed by your audit findings.\n"
+        "Use this structure:\n"
+        "[DRAFT REPORT]\n"
+        "(Preserve original content)\n"
+        "\n"
+        "[AUDIT FINDINGS]\n"
+        "(Your findings here)\n"
+        "\n"
+        "DO NOT use introductory phrases. Start directly."
     ),
+    tools=[bq_toolset],
+    output_key="draft_document_audit"
 )
 
 critic = LlmAgent(
@@ -90,13 +113,20 @@ critic = LlmAgent(
     description='Senior Strategic Analyst who critiques reports for depth, logic, and value.',
     instruction=(
         "You are a Senior Strategic Analyst known for your sharp critical thinking.\n"
-        "Input: A draft report (potentially containing Audit Findings).\n"
-        "Task: CRITIQUE the draft rigorously.\n"
+        "\n"
+        "INPUT DATA:\n"
+        "{draft_document_audit}\n"
+        "\n"
+        "TASK: CRITIQUE the above document rigorously.\n"
         "- Check for data sufficiency: Did they use enough data? Is the interpretation correct?\n"
         "- Check for business value: Are the insights actionable? Is it just descriptive or prescriptive?\n"
-        "- check for logic and flow.\n"
-        "Output: A concise list of specific critiques and improvements needed. Do NOT rewrite the report yet. DO NOT use introductory phrases like 'As a critic'. Respond directly."
+        "- Check for logic and flow.\n"
+        "\n"
+        "CRITICAL OUTPUT FORMAT:\n"
+        "You MUST preserve ALL sections you received and add your critique in a section named [CRITIQUE].\n"
+        "DO NOT rewrite the report yet. DO NOT use introductory phrases. Start directly."
     ),
+    output_key="draft_document_critique"
 )
 
 refiner = LlmAgent(
@@ -105,14 +135,21 @@ refiner = LlmAgent(
     description='Lead Editor who finalizes the report into a high-value professional deliverable.',
     instruction=(
         "You are a Lead Editor and Communication Expert.\n"
-        "Inputs: The Draft Report, Audit Findings, and Critic's Feedback.\n"
-        "Task: REWRITE and POLISH the report into a final 'High-Value' Professional Deliverable.\n"
-        "- Address all issues raised by the Auditor and Critic.\n"
-        "- Use professional Markdown formatting (Headers, Bullet points, Bold text).\n"
+        "\n"
+        "INPUT DATA:\n"
+        "{draft_document_critique}\n"
+        "\n"
+        "TASK: REWRITE and POLISH the accumulated work into a final 'High-Value' Professional Deliverable.\n"
+        "- Address all issues raised in the Audit Findings and Critique sections.\n"
+        "- Use professional Markdown formatting (Headers, Bullet points, Bold text, Tables where appropriate).\n"
         "- Ensure the tone is authoritative, clear, and executive-ready.\n"
-        "- Structure: Title, Executive Summary, Strategic Analysis (incorporating data), detailed Findings, and Strategic Recommendations.\n"
-        "- DO NOT use introductory phrases like 'As an editor' or 'As a professional'. Respond directly with the polished report."
+        "- Structure: Title, Executive Summary, Strategic Analysis (incorporating data insights), Detailed Findings, and Strategic Recommendations.\n"
+        "\n"
+        "CRITICAL OUTPUT FORMAT:\n"
+        "Output ONLY the final polished report. DO NOT include intermediate audit/critique metadata.\n"
+        "DO NOT use introductory phrases. Start directly with the report title."
     ),
+    output_format=DRAFT_DOCUMENT_FINAL
 )
 
 title_agent = LlmAgent(
@@ -161,7 +198,3 @@ root_agent = LlmAgent(
     ),
     sub_agents=[casual_agent]
 )
-
-
-
-
