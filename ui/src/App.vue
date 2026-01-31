@@ -179,6 +179,51 @@ const handleChatClick = async (event: MouseEvent) => {
   }
 }
 
+const copyToClipboard = async (text: string, event: MouseEvent) => {
+  const btn = event.currentTarget as HTMLElement
+  try {
+    await navigator.clipboard.writeText(text)
+    const originalContent = btn.innerHTML
+    btn.innerHTML = `<svg class="w-4 h-4 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`
+    setTimeout(() => { btn.innerHTML = originalContent }, 2000)
+  } catch (err) {
+    console.error('Failed to copy text: ', err)
+  }
+}
+
+const exportMessage = (msg: Message) => {
+  const sessionTitle = sessions.value.find(s => s.id === currentSessionId.value)?.state?.title || 'Report'
+  const filename = `${sessionTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${msg.author || 'AI'}_${new Date().getTime()}.md`
+  const blob = new Blob([msg.text], { type: 'text/markdown' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+const shareMessage = async (msg: Message) => {
+  const shareData = {
+    title: `Insight from Callie (${msg.author || 'AI'})`,
+    text: msg.text,
+    url: window.location.href
+  }
+  
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData)
+    } else {
+      await navigator.clipboard.writeText(`${shareData.title}\n\n${shareData.text}\n\nSent from Callie AI`)
+      alert('Share link copied to clipboard!')
+    }
+  } catch (err) {
+    console.error('Error sharing:', err)
+  }
+}
+
 const processAgentEvent = (event: AgentEvent) => {
   if (event.id && processedEventIds.value.has(event.id)) return
   if (event.id) processedEventIds.value.add(event.id)
@@ -947,7 +992,25 @@ onUnmounted(() => {
                         <span class="text-gray-400">{{ msg.timestamp }}</span>
                       </div>
                       <div
-                        class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 px-5 py-3.5 rounded-2xl rounded-tl-none shadow-sm prose dark:prose-invert prose-sm max-w-none break-words prose-headings:text-gray-800 dark:prose-headings:text-gray-100 prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-strong:text-gray-900 dark:prose-strong:text-white prose-code:text-pink-600 dark:prose-code:text-pink-300 prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-700 prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-table:border-collapse prose-tr:border-b prose-tr:border-gray-200 dark:prose-tr:border-gray-700/50">
+                        class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 px-5 py-3.5 rounded-2xl rounded-tl-none shadow-sm prose dark:prose-invert prose-sm max-w-none break-words prose-headings:text-gray-800 dark:prose-headings:text-gray-100 prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-strong:text-gray-900 dark:prose-strong:text-white prose-code:text-pink-600 dark:prose-code:text-pink-300 prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-700 prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-table:border-collapse prose-tr:border-b prose-tr:border-gray-200 dark:prose-tr:border-gray-700/50 relative group/bubble">
+                        <!-- Action Buttons -->
+                        <div class="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover/bubble:opacity-100 transition-all duration-200 bg-white/50 dark:bg-gray-900/50 backdrop-blur-md p-1 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm z-10">
+                          <button @click="copyToClipboard(msg.text, $event)" class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-blue-500 transition-colors" title="Copy Message">
+                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          </button>
+                          <button @click="exportMessage(msg)" class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-emerald-500 transition-colors" title="Export as Markdown">
+                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                          </button>
+                          <button @click="shareMessage(msg)" class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500 hover:text-purple-500 transition-colors" title="Share Message">
+                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                            </svg>
+                          </button>
+                        </div>
                         <div v-html="renderMarkdown(msg.text)"></div>
                       </div>
                     </div>
