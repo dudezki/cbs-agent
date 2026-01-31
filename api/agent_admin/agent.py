@@ -149,7 +149,7 @@ refiner = LlmAgent(
         "Output ONLY the final polished report. DO NOT include intermediate audit/critique metadata.\n"
         "DO NOT use introductory phrases. Start directly with the report title."
     ),
-    output_format=DRAFT_DOCUMENT_FINAL
+    output_key="draft_document_final"
 )
 
 title_agent = LlmAgent(
